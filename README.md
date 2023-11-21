@@ -7,16 +7,16 @@ This Timeflux application is a proof-of-concept of the Burst VEP method.
 First install Timeflux and its depedencies in a new environment:
 
 ```bash
-$ conda create --name timeflux python=3.10 pip pytables
-$ conda activate timeflux
-$ pip install timeflux
-$ timeflux -v
+conda create --name timeflux python=3.10 pip pytables
+conda activate timeflux
+pip install timeflux
+timeflux -v
 ```
 
 Then simply clone this repository:
 
 ```bash
-$ git clone https://github.com/timeflux/burst.git
+git clone https://github.com/timeflux/burst.git
 ```
 
 ## Configuration
@@ -83,7 +83,7 @@ The shape, position, and colors of the targets can be further adjusted in [`cust
 Run the following:
 
 ```bash
-$ timeflux -d main.yaml
+timeflux -d main.yaml
 ```
 
 You can monitor the EEG signal [here](http://localhost:8000/monitor/). The application is accessible at [this address](http://localhost:8000/bvep/).
@@ -100,7 +100,7 @@ For further analysis, data and events are recorded in the `data` folder.
 
 ### Load EEG data, events and metadata
 
-```pyhton
+```python
 import pandas as pd
 fname = "data/20231121-090341.hdf5"
 raw = pd.read_hdf(fname, "raw")
