@@ -10,7 +10,6 @@ First install Timeflux and its depedencies in a new environment:
 $ conda create --name timeflux python=3.10 pip pytables
 $ conda activate timeflux
 $ pip install timeflux
-$ conda activate timeflux
 $ timeflux -v
 ```
 
@@ -26,9 +25,9 @@ The application can be fine-tuned in a number of ways.
 
 ### Environment
 
-The `.env` file provides high-level configuration.
+The [`.env`](https://github.com/timeflux/burst/blob/main/.env) file provides high-level configuration.
 
-By default, a random signal is used in place of EEG data, so you can try the application without any additional hardware. For real EEG acquisition, you must provide your own `DEVICE.yaml` graph in the `graphs` folder.
+By default, a random signal is used in place of EEG data, so you can try the application without any additional hardware. For real EEG acquisition, you must provide your own `DEVICE.yaml` graph in the [`graphs`](https://github.com/timeflux/burst/tree/main/graphs) folder.
 
 Currently, only the `MCCA` machine learning pipeline is available.
 
@@ -48,7 +47,7 @@ The default preprocessing consists of the following:
 - Notch filter at 50 Hz (IIR, order 3)
 - Bandpass filter between 1 and 40 Hz (IIR, order 2)
 
-It can be modified in the [`main.yaml`]() graph.
+It can be modified in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph.
 
 ### GUI
 
@@ -69,15 +68,15 @@ The application expects an dictionary of settings.
 | colors.target | The target color during the off-state | #797979 |
 | colors.border | The border color | #000000 |
 
-The default settings can be changed in the [`main.yaml`]() graph. See [app.js]() for details.
+The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. Also see [app.js](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
 
 ### HTML
 
-Targets can be freely added in [`index.html`](). Each target must have a `target` class. Targets will be identified in DOM order (i.e. the first target in `index.html` will have the `0` id). There must be as many HTML elements as there are burst codes.
+Targets can be freely added in [`index.html`](https://github.com/timeflux/burst/blob/main/www/index.html). Each target must have a `target` class. Targets will be identified in DOM order (i.e. the first target in `index.html` will have the `0` id). There must be as many HTML elements as there are burst codes.
 
 ### CSS
 
-The shape, position, and colors of the targets can be further adjusted in [`custom.css`]().
+The shape, position, and colors of the targets can be further adjusted in [`custom.css`](https://github.com/timeflux/burst/blob/main/www/assets/css/custom.css).
 
 ## Running
 
