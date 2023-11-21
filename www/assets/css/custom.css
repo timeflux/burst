@@ -1,0 +1,31 @@
+#target-01 {
+	left: calc(50% - 75px);
+	top: calc(50% - 75px - 200px);
+}
+
+#target-02 {
+	left: calc(50% - 75px + 200px);
+	top: calc(50% - 75px);
+}
+
+#target-03 {
+	left: calc(50% - 75px);
+	top: calc(50% - 75px + 200px);
+}
+
+#target-04 {
+	left: calc(50% - 75px - 200px);
+	top: calc(50% - 75px);
+}
+
+.target.on {
+	/* Override default here */
+}
+
+.target.off {
+	/* Override default here */
+}
+
+.target.highlight {
+	/* Override default here */
+}

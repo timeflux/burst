@@ -1,0 +1,62 @@
+graphs:
+
+- id: Classification
+  nodes:
+  - id: sub
+    module: timeflux.nodes.zmq
+    class: Sub
+    params:
+      topics: [ filtered, events ]
+  - id: epoch
+    module: timeflux.nodes.epoch
+    class: Samples
+    params:
+      trigger: epoch
+      length: {{ EPOCH }}
+  - id: classification
+    module: timeflux.nodes.ml
+    class: Pipeline
+    params:
+      mode: predict
+      event_start_accumulation: calibration_begins
+      event_stop_accumulation: calibration_ends
+      event_start_training: calibration_ends
+      steps:
+        - module: timeflux.estimators.transformers.shape
+          class: Transpose
+          args:
+            axes: [ 0, 2, 1 ]
+        - module: estimators.burst
+          class: MCCA
+  - id: predict
+    module: nodes.predict
+    class: Meta
+  - id: pub
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: predictions
+  # - id: display
+  #   module: timeflux.nodes.debug
+  #   class: Display
+  #   params:
+  #     meta: true
+  edges:
+    - source: sub:filtered
+      target: epoch
+    - source: sub:events
+      target: epoch:events
+    - source: sub:events
+      target: classification:events
+    - source: epoch:*
+      target: classification:training
+    - source: epoch:*
+      target: classification
+    - source: classification:events
+      target: predict
+    - source: predict
+      target: pub
+    # - source: classification:events
+    #   target: display
+  rate: 10
+

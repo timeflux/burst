@@ -1,0 +1,101 @@
+  /*************/
+ /* VARIABLES */
+/*************/
+
+:root {
+    --background-color: #797979;
+    --target-color: #797979;
+    --border-color: #000000;
+}
+
+
+  /**********/
+ /* COMMON */
+/**********/
+
+body {
+    font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    background-color: var(--background-color);
+}
+
+* { outline: none; }
+
+.hidden {
+    display: none !important;
+}
+
+  /**********/
+ /* TARGET */
+/**********/
+
+.target {
+    width: 150px;
+    height: 150px;
+    border-radius: 75px;
+    position: absolute;
+    border: 3px solid var(--border-color);;
+}
+
+.target.on {
+    background-image: url(../img/gabor.png);
+}
+
+.target.off {
+    background-color: var(--target-color);
+}
+
+.target.highlight {
+    border: 3px solid blue;
+}
+
+.target.lock {
+    background-color: green;
+}
+
+  /***********/
+ /* OVERLAY */
+/***********/
+
+#overlay {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--background-color);
+    z-index: 1000;
+    cursor: default;
+}
+
+#title {
+    position: absolute;
+    top: calc(50% - 150px);
+    width: 100%;
+    text-align: center;
+    font-size: 50px;
+}
+
+#message {
+    position: absolute;
+    top: calc(50% - 50px);
+    /*width: calc(100% - 60px);*/
+    width: 700px;
+    left:0;
+    right:0;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    font-size: 25px;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+#footer {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 15px;
+}

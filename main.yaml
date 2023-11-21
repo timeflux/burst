@@ -1,0 +1,117 @@
+import:
+  - graphs/{{ DEVICE }}.yaml
+  - graphs/classification.yaml
+  - graphs/record.yaml
+
+graphs:
+
+  - id: Broker
+    nodes:
+    - id: proxy
+      module: timeflux.nodes.zmq
+      class: Broker
+
+  - id: Preprocessing
+    nodes:
+    - id: sub
+      module: timeflux.nodes.zmq
+      class: Sub
+      params:
+        topics: [raw]
+    - id: rereference
+      module: nodes.rereference
+      class: Mean
+    - id: notch
+      module: timeflux_dsp.nodes.filters
+      class: IIRFilter
+      params:
+        filter_type: bandstop
+        frequencies: [48, 52]
+        order: 3
+    - id: bandpass
+      module: timeflux_dsp.nodes.filters
+      class: IIRFilter
+      params:
+        filter_type: bandpass
+        frequencies: [1, 40]
+        order: 2
+    - id: pub
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: filtered
+    edges:
+      - source: sub:raw
+        target: rereference
+      - source: rereference
+        target: notch
+      - source: notch
+        target: bandpass
+      - source: bandpass
+        target: pub
+    rate: 10
+
+  - id: UI
+    nodes:
+    - id: ui
+      module: timeflux_ui.nodes.ui
+      class: UI
+      params:
+        routes:
+          bvep: ./www
+        settings:
+          bvep:
+            training:
+              cycles: 3
+              repetitions: 2
+            targets:
+              - "000000000010000000000000000000001000000000000000000000100000000000000000000010000000000000000000001000000000000000000000100000000000"
+              - "001000000000000000000000100000000000000000000010000000000000000000001000000000000000000000100000000000000000000010000000000000000000"
+              - "000000000000000010000000000000000000001000000000000000000000100000000000000000000010000000000000000000001000000000000000000000100000"
+              - "000000000000100000000000000000000010000000000000000000001000000000000000000000100000000000000000000010000000000000000000001000000000"
+    - id: sub
+      module: timeflux.nodes.zmq
+      class: Sub
+      params:
+        topics: [ filtered, predictions ]
+    - id: pub
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: events
+    edges:
+    - source: ui:events
+      target: pub
+    - source: sub:filtered
+      target: ui:eeg
+    - source: sub:predictions
+      target: ui:predictions
+    rate: 20
+
+  # - id: Debug
+  #   nodes:
+  #   - id: sub
+  #     module: timeflux.nodes.zmq
+  #     class: Sub
+  #     params:
+  #       topics: [ events, predictions ]
+  #   - id: display_events
+  #     module: timeflux.nodes.debug
+  #     class: Display
+  #     params:
+  #       meta: true
+  #   - id: display_predictions
+  #     module: timeflux.nodes.debug
+  #     class: Display
+  #     params:
+  #       meta: true
+  #   edges:
+  #     - source: sub:events
+  #       target: display_events
+  #     - source: sub:predictions
+  #       target: display_predictions
+  #   rate: 10
+
+
+
+
