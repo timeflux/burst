@@ -68,7 +68,7 @@ The application expects an dictionary of settings.
 | colors.target | The target color during the off-state | #797979 |
 | colors.border | The border color | #000000 |
 
-The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. Also see [app.js](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
+The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. Also see [`app.js`](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
 
 ### HTML
 
@@ -104,7 +104,7 @@ For further analysis, data and events are recorded in the `data` folder.
 import pandas as pd
 fname = "data/20231121-090341.hdf5"
 raw = pd.read_hdf(fname, "raw")
-filtered = pd.read_hdf(fname, "raw")
+filtered = pd.read_hdf(fname, "filtered")
 events = pd.read_hdf(fname, "events")
 config = events.loc[events['label'] == "session_begins"]["data"][0]
 ```
