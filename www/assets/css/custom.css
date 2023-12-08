@@ -18,6 +18,11 @@
 	top: calc(50% - 75px);
 }
 
+#target-05 {
+	left: calc(50% - 75px);
+	top: calc(50% - 75px);
+}
+
 .target.on {
 	/* Override default here */
 }
