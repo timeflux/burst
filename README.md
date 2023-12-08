@@ -68,7 +68,7 @@ The application expects an dictionary of settings.
 | stim.depth | The stimulus opacity (between 0 and 1) | 0.8 |
 | colors.background | The background color | #797979 |
 | colors.target_off | The target color during the off-state | #797979 |
-| colors.target_on | The target color during the on-state, if stim.type is 'plain' | #797979 |
+| colors.target_on | The target color during the on-state, if stim.type is 'plain' | #FFFFFF |
 | colors.target_border | The border color | #000000 |
 | colors.target_cue | The cue border color | blue |
 | colors.target_lock | The prediction color | green |
