@@ -56,8 +56,8 @@ The application expects an dictionary of settings.
 | Setting | Description  | Default |
 |---------|--------------|---------|
 | targets | A list of burst code (one per target) | See `main.yaml` |
-| training.cycles | The number of rounds for each target during calibration | 3 |
-| training.repetitions | The number of repetitions during each cycle | 2 |
+| training.blocks | The number of rounds for each target during calibration | 3 |
+| training.repetitions | The number of repetitions for each target during each block | 2 |
 | training.duration_rest | The rest period before a new target is presented, in ms | 2000 |
 | training.duration_cue_on | The duration of the cue | 1500 |
 | training.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
@@ -97,7 +97,7 @@ timeflux -d main.yaml
 
 You can monitor the EEG signal [here](http://localhost:8000/monitor/). The application is accessible at [this address](http://localhost:8000/bvep/).
 
-Maximize your browser window to avoid distractions, and follow the instructions. The session starts with a calibration stage followed by a free selection, 4-target practice.
+Maximize your browser window to avoid distractions, and follow the instructions. The session starts with a calibration stage followed by a free selection, 5-target practice.
 
 When you are done, close the browser tab, and send the `Ctrl+C` command to Timeflux.
 

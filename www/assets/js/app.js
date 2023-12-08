@@ -60,6 +60,23 @@ function hex_to_rgba(hex, opacity) {
         .join(',') + ')';
 }
 
+/**
+ * Shuffle an array
+ *
+ * This is done in-place. Make a copy first with .slice(0) if you don't want to
+ * modify the original array.
+ *
+ * @param {array} array - the array to shuffle
+ *
+ * @see:https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
+ */
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
 
 /**
  * A Burst VEP controller
@@ -71,8 +88,8 @@ class Burst {
      * @param {Object} [options]
      * @param {array} options.targets - a list of burst code (one per target)
      * @param {Object} [options.training]
-     * @param {number} [options.training.cycles] - the number of rounds for each target during calibration
-     * @param {number} [options.training.repetitions] - the number of repetitions during each cycle
+     * @param {number} [options.training.blocks] - the number of rounds for each target during calibration
+     * @param {number} [options.training.repetitions] - the number of repetitions for each target during each block
      * @param {number} [options.training.duration_rest] - the rest period before a new target is presented, in ms
      * @param {number} [options.training.duration_cue_on] - the duration of the cue
      * @param {number} [options.training.duration_cue_off] - the duration of the pause before the code starts flashing
@@ -97,8 +114,8 @@ class Burst {
         let default_options = {
             targets: [],
             training: {
-                cycles: 3,
-                repetitions: 2,
+                blocks: 3,
+                repetitions: 1,
                 duration_rest: 2000,
                 duration_cue_on: 1500,
                 duration_cue_off: 500
@@ -151,7 +168,7 @@ class Burst {
         //console.log(this.targets);
 
         // Initialize sequence
-        // Assume that all targets are of equal length
+        // Assume that all sequences are of equal length
         this.sequence = new Sequence(this.options.targets[0].length)
 
         // Initialize events
@@ -177,8 +194,11 @@ class Burst {
         this.io.event('calibration_begins');
 
         // Highlight each target
-        for (let cycle = 0; cycle < this.options.training.cycles; cycle++) {
-            for (let target of this.targets) {
+        let targets = this.targets.slice(0);
+        for (let block = 0; block < this.options.training.blocks; block++) {
+            shuffle(targets);
+            console.log(targets);
+            for (let target of targets) {
                 this.target = target.index;
                 await sleep(this.options.training.duration_rest);
                 toggle(target.element, 'cue');
