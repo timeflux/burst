@@ -12,7 +12,7 @@ graphs:
       class: Save
       params:
         path: data
-        min_itemsize: 200
+        min_itemsize: 1000
     edges:
       - source: subscribe:events
         target: save:events

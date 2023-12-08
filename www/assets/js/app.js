@@ -40,10 +40,24 @@ function set_css_var(name, value) {
 /**
  * Get a CSS variable
  *
- * @param {string} name -variable name
+ * @param {string} name - variable name
  */
 function get_css_var(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name);
+}
+
+/**
+ * Convert an hexadecimal color to RGBA
+ *
+ * @param {string} hex - the hexadecimal color
+ * @param {number} opacity - the alpha value
+ */
+function hex_to_rgba(hex, opacity) {
+    return 'rgba(' + (hex = hex.replace('#', ''))
+        .match(new RegExp('(.{' + hex.length/3 + '})', 'g'))
+        .map(function(l) { return parseInt(hex.length%2 ? l+l : l, 16) })
+        .concat(isFinite(opacity) ? opacity : 1)
+        .join(',') + ')';
 }
 
 
@@ -60,16 +74,22 @@ class Burst {
      * @param {number} [options.training.cycles] - the number of rounds for each target during calibration
      * @param {number} [options.training.repetitions] - the number of repetitions during each cycle
      * @param {number} [options.training.duration_rest] - the rest period before a new target is presented, in ms
-     * @param {number} [options.training.duration_focus_on] - the duration of the highlight
-     * @param {number} [options.training.duration_focus_off] - the duration of the pause before the code starts flashing
+     * @param {number} [options.training.duration_cue_on] - the duration of the cue
+     * @param {number} [options.training.duration_cue_off] - the duration of the pause before the code starts flashing
      * @param {Object} [options.validation]
      * @param {number} [options.validation.duration_rest] - the rest period before the free run begins, in ms
-     * @param {number} [options.validation.duration_focus_on] - the duration of the feedback when a prediction is received
-     * @param {number} [options.validation.duration_focus_off] - the rest period after the feedback
+     * @param {number} [options.validation.duration_lock_on] - the duration of the feedback when a prediction is received
+     * @param {number} [options.validation.duration_lock_off] - the rest period after the feedback
+     * @param {Object} [options.stim]
+     * @param {string} [options.stim.type] - the stimulus type ('gabord', 'ricker', 'face', 'plain')
+     * @param {number} [options.stim.depth] - the stimulus opacity (0-1)
      * @param {Object} [options.colors]
-     * @param {string} [options.colors.background] - the background color
-     * @param {string} [options.colors.target] - the target color during the off-state
-     * @param {string} [options.colors.border] - the border color
+     * @param {string} [options.colors.background] - the background color (hexadecimal)
+     * @param {string} [options.colors.target_off] - the target color during the off-state (hexadecimal)
+     * @param {string} [options.colors.target_on] - the target color during the on-state, if stim.type is 'plain' (hexadecimal)
+     * @param {string} [options.colors.target_border] - the border color (hexadecimal)
+     * @param {string} [options.colors.target_cue] - the cue border color (hexadecimal)
+     * @param {string} [options.colors.target_lock] - the prediction color (hexadecimal)
      */
     constructor(options = {}) {
 
@@ -80,18 +100,25 @@ class Burst {
                 cycles: 3,
                 repetitions: 2,
                 duration_rest: 2000,
-                duration_focus_on: 1500,
-                duration_focus_off: 500
+                duration_cue_on: 1500,
+                duration_cue_off: 500
             },
             validation: {
                 duration_rest: 2000,
-                duration_focus_on: 1500,
-                duration_focus_off: 500
+                duration_lock_on: 1500,
+                duration_lock_off: 500
+            },
+            stim: {
+                type: 'gabor',
+                depth: .8
             },
             colors: {
                 background: '#797979',
-                target: '#797979',
-                border: '#000000'
+                target_off: '#797979',
+                target_on: '#FFFFFF',
+                target_border: '#000000',
+                target_cue: 'blue',
+                target_lock: 'green'
             }
         };
         this.options = merge(default_options, options);
@@ -99,8 +126,13 @@ class Burst {
 
         // Initialize UI
         set_css_var('--background-color', this.options.colors.background);
-        set_css_var('--target-color', this.options.colors.target);
-        set_css_var('--border-color', this.options.colors.border);
+        set_css_var('--target-off-color', this.options.colors.target_off);
+        set_css_var('--target-on-color', this.options.colors.target_on);
+        set_css_var('--target-border-color', this.options.colors.target_border);
+        set_css_var('--target-cue-color', this.options.colors.target_cue);
+        set_css_var('--target-lock-color', this.options.colors.target_lock);
+        set_css_var('--target-url', 'url(../img/' + this.options.stim.type + '.png)');
+        set_css_var('--target-depth', hex_to_rgba(this.options.colors.target_off, 1 - this.options.stim.depth));
 
         // Initialize status
         this.status = 'idle';
@@ -149,10 +181,10 @@ class Burst {
             for (let target of this.targets) {
                 this.target = target.index;
                 await sleep(this.options.training.duration_rest);
-                toggle(target.element, 'highlight');
-                await sleep(this.options.training.duration_focus_on);
-                toggle(target.element, 'highlight');
-                await sleep(this.options.training.duration_focus_off);
+                toggle(target.element, 'cue');
+                await sleep(this.options.training.duration_cue_on);
+                toggle(target.element, 'cue');
+                await sleep(this.options.training.duration_cue_off);
                 this.status = 'calibration';
                 await flag('done');
             }
@@ -182,9 +214,9 @@ class Burst {
             this.status = 'validation';
             let target = await flag('predict');
             toggle(this.targets[target].element, 'lock');
-            await sleep(this.options.validation.duration_focus_on);
+            await sleep(this.options.validation.duration_lock_on);
             toggle(this.targets[target].element, 'lock');
-            await sleep(this.options.validation.duration_focus_off);
+            await sleep(this.options.validation.duration_lock_off);
         }
 
         // Send stop event

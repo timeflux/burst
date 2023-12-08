@@ -23,6 +23,10 @@
 	top: calc(50% - 75px);
 }
 
+.target {
+	/* Override default here */
+}
+
 .target.on {
 	/* Override default here */
 }
@@ -31,6 +35,10 @@
 	/* Override default here */
 }
 
-.target.highlight {
+.target.cue {
+	/* Override default here */
+}
+
+.target.lock {
 	/* Override default here */
 }

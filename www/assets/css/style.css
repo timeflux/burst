@@ -4,8 +4,13 @@
 
 :root {
     --background-color: #797979;
-    --target-color: #797979;
-    --border-color: #000000;
+    --target-url: url(../img/gabor.png);
+    --target-border-color: #000000;
+    --target-off-color: #797979;
+    --target-on-color: white;
+    --target-cue-color: blue;
+    --target-lock-color: green;
+    --target-depth: rgba(121, 121, 121, .8);
 }
 
 
@@ -24,6 +29,7 @@ body {
     display: none !important;
 }
 
+
   /**********/
  /* TARGET */
 /**********/
@@ -33,24 +39,27 @@ body {
     height: 150px;
     border-radius: 75px;
     position: absolute;
-    border: 3px solid var(--border-color);;
+    border: 3px solid var(--target-border-color);
 }
 
 .target.on {
-    background-image: url(../img/gabor.png);
+    background-color: var(--target-on-color);
+    background-image: linear-gradient(var(--target-depth), var(--target-depth)), var(--target-url);
+    background-size: cover;
 }
 
 .target.off {
-    background-color: var(--target-color);
+    background-color: var(--target-off-color);
 }
 
-.target.highlight {
-    border: 3px solid blue;
+.target.cue {
+    border: 3px solid var(--target-cue-color);
 }
 
 .target.lock {
-    background-color: green;
+    background-color: var(--target-lock-color);
 }
+
 
   /***********/
  /* OVERLAY */
@@ -80,7 +89,6 @@ body {
 #message {
     position: absolute;
     top: calc(50% - 50px);
-    /*width: calc(100% - 60px);*/
     width: 700px;
     left:0;
     right:0;

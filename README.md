@@ -59,14 +59,19 @@ The application expects an dictionary of settings.
 | training.cycles | The number of rounds for each target during calibration | 3 |
 | training.repetitions | The number of repetitions during each cycle | 2 |
 | training.duration_rest | The rest period before a new target is presented, in ms | 2000 |
-| training.duration_focus_on | The duration of the highlight | 1500 |
-| training.duration_focus_off | The duration of the pause before the code starts flashing | 500 |
+| training.duration_cue_on | The duration of the cue | 1500 |
+| training.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
 | validation.duration_rest | The rest period before the free run begins, in ms | 2000 |
-| validation.duration_focus_on | The duration of the feedback when a prediction is received | 1500 |
-| validation.duration_focus_off | The rest period after the feedback | 500 |
+| validation.duration_lock_on | The duration of the feedback when a prediction is received | 1500 |
+| validation.duration_lock_off | The rest period after the feedback | 500 |
+| stim.type | The stimulus type ('gabord', 'ricker', 'face', 'plain') | gabor |
+| stim.depth | The stimulus opacity (between 0 and 1) | 0.8 |
 | colors.background | The background color | #797979 |
-| colors.target | The target color during the off-state | #797979 |
-| colors.border | The border color | #000000 |
+| colors.target_off | The target color during the off-state | #797979 |
+| colors.target_on | The target color during the on-state, if stim.type is 'plain' | #797979 |
+| colors.target_border | The border color | #000000 |
+| colors.target_cue | The cue border color | blue |
+| colors.target_lock | The prediction color | green |
 
 The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. Also see [`app.js`](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
 
@@ -77,6 +82,10 @@ Targets can be freely added in [`index.html`](https://github.com/timeflux/burst/
 ### CSS
 
 The shape, position, and colors of the targets can be further adjusted in [`custom.css`](https://github.com/timeflux/burst/blob/main/www/assets/css/custom.css).
+
+### Images
+
+To create a new stimulus type, simply add a new image in [this folder](https://github.com/timeflux/burst/blob/main/www/assets/img/).
 
 ## Running
 
