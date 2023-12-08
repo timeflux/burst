@@ -17,7 +17,8 @@ graphs:
     module: timeflux.nodes.ml
     class: Pipeline
     params:
-      mode: predict
+      mode: predict_proba
+      meta_label: [epoch, context, bit]
       event_start_accumulation: calibration_begins
       event_stop_accumulation: calibration_ends
       event_start_training: calibration_ends
@@ -25,12 +26,31 @@ graphs:
         - module: timeflux.estimators.transformers.shape
           class: Transpose
           args:
-            axes: [ 0, 2, 1 ]
-        - module: estimators.burst
-          class: MCCA
+            axes: [0, 2, 1]
+        # - module: pyriemann.estimation
+        #   class: XdawnCovariances
+        #   args:
+        #     nfilter: 4
+        #     estimator: lwf
+        #     xdawn_estimator: scm
+        # - module: pyriemann.tangentspace
+        #   class: TangentSpace
+        #   args:
+        #     metric: riemann
+        # - module: sklearn.discriminant_analysis
+        #   class: LinearDiscriminantAnalysis
+        #   args:
+        #     solver: lsqr
+        #     shrinkage: auto
+        - module: pyriemann.estimation
+          class: ERPCovariances
+          args:
+            estimator: oas
+        - module: pyriemann.classification
+          class: MDM
   - id: predict
     module: nodes.predict
-    class: Meta
+    class: Accumulate
   - id: pub
     module: timeflux.nodes.zmq
     class: Pub

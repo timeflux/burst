@@ -9,7 +9,7 @@ First install Timeflux and its depedencies in a new environment:
 ```bash
 conda create --name timeflux python=3.10 pip pytables
 conda activate timeflux
-pip install timeflux
+pip install timeflux timeflux_dsp pyriemann
 timeflux -v
 ```
 
@@ -29,13 +29,13 @@ The [`.env`](https://github.com/timeflux/burst/blob/main/.env) file provides hig
 
 By default, a random signal is used in place of EEG data, so you can try the application without any additional hardware. For real EEG acquisition, you must provide your own `DEVICE.yaml` graph in the [`graphs`](https://github.com/timeflux/burst/tree/main/graphs) folder.
 
-Currently, only the `MCCA` machine learning pipeline is available.
+Currently, only the `riemann` machine learning pipeline is available.
 
 | Setting | Description  | Default |
 |---------|--------------|---------|
 | DEVICE | EEG device | dummy |
-| EPOCH | Epoch length, in seconds, used for classification | 2.2 |
-| PIPELINE | Classification pipeline (riemann, MCCA, EEGNET) | MCCA |
+| EPOCH | Epoch length, in seconds, used for classification | 0.25 |
+| PIPELINE | Classification pipeline (riemann, eegnet) | riemann |
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
 
@@ -120,4 +120,4 @@ config = events.loc[events['label'] == "session_begins"]["data"][0]
 
 ## Limitations
 
-The application currently classifies single trials against multiple CCA templates. In future versions, we will implement an accumulation of probabilities method, enable continuous classification on sliding windows, reduce the length of epochs, and implement other classification methods, including deep neural networks.
+The application currently classifies single trials using ERP covariances and MDM for each frame on 250ms epochs. The probabilities from the classifier are accumulated, but final decisions are random. In future versions, we will implement a markov-string like algorithm to emit predictions, optimize the riemannian pipeline, handle class imbalance, and normalize the epochs. We will also implement other classification methods, such as deep neural networks.

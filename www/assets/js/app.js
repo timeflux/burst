@@ -114,8 +114,8 @@ class Burst {
         let default_options = {
             targets: [],
             training: {
-                blocks: 3,
-                repetitions: 1,
+                blocks: 5,
+                repetitions: 2,
                 duration_rest: 2000,
                 duration_cue_on: 1500,
                 duration_cue_off: 500
@@ -197,7 +197,6 @@ class Burst {
         let targets = this.targets.slice(0);
         for (let block = 0; block < this.options.training.blocks; block++) {
             shuffle(targets);
-            console.log(targets);
             for (let target of targets) {
                 this.target = target.index;
                 await sleep(this.options.training.duration_rest);
@@ -233,6 +232,8 @@ class Burst {
         while (true) {
             this.status = 'validation';
             let target = await flag('predict');
+            this.status = 'idle';
+            this._reset();
             toggle(this.targets[target].element, 'lock');
             await sleep(this.options.validation.duration_lock_on);
             toggle(this.targets[target].element, 'lock');
@@ -253,9 +254,14 @@ class Burst {
         if (this.status == 'idle') return;
 
         // Send epoch markers
-        if (this.sequence.index == 0) {
-            this.io.event('epoch', { target: this.target });
+        let meta = {'index': this.sequence.index};
+        if (this.status == 'calibration') {
+            meta['cue'] = this.target;
+            meta['bit'] = parseInt(this.targets[this.target].pattern[this.sequence.index]);
+        } else {
+            meta['bits'] = this.targets.map((target) => parseInt(target.pattern[this.sequence.index]));
         }
+        this.io.event('epoch', meta);
 
         // Update DOM and advance sequence
         for (const target of this.targets) {
@@ -269,19 +275,10 @@ class Burst {
         }
         this.sequence.next();
 
-        // Stop calibration
+        // Stop calibration for the current target
         if (this.status == 'calibration') {
             if (this.sequence.cycle == this.options.training.repetitions) {
                 trigger('done');
-                this._reset();
-            }
-        }
-
-        // Stop validation (single trial)
-        // TODO: handle continuous classification
-        if (this.status == 'validation') {
-            //console.log(this.sequence.cycle, this.sequence.index);
-            if (this.sequence.cycle == 1) {
                 this._reset();
             }
         }
@@ -356,8 +353,7 @@ load_settings().then(async settings => {
                 case 'ready':
                     trigger('ready');
                 case 'predict':
-                    //console.log('predict');
-                    trigger('predict', JSON.parse(row.data).result);
+                    trigger('predict', row.data.target);
             }
         }
     });
