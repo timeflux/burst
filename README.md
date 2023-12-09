@@ -9,7 +9,7 @@ First install Timeflux and its depedencies in a new environment:
 ```bash
 conda create --name timeflux python=3.10 pip pytables
 conda activate timeflux
-pip install timeflux timeflux_dsp pyriemann
+pip install timeflux timeflux_dsp pyriemann imblearn
 timeflux -v
 ```
 
@@ -48,6 +48,8 @@ The default preprocessing consists of the following:
 - Bandpass filter between 1 and 40 Hz (IIR, order 2)
 
 It can be modified in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph.
+
+Individual epochs are scaled using the standard deviation of the training set. Class imbalance is handled through random undersampling.
 
 ### GUI
 
@@ -120,4 +122,4 @@ config = events.loc[events['label'] == "session_begins"]["data"][0]
 
 ## Limitations
 
-The application currently classifies single trials using ERP covariances and MDM for each frame on 250ms epochs. The probabilities from the classifier are accumulated, but final decisions are random. In future versions, we will implement a markov-string like algorithm to emit predictions, optimize the riemannian pipeline, handle class imbalance, and normalize the epochs. We will also implement other classification methods, such as deep neural networks.
+The application currently classifies single trials. Epochs are triggered for each frame on 250ms windows. The classification pipeline computes xdawn covariances projected on the tangent space followed by a linear discriminant analysis. The probabilities from the classifier are accumulated, but final decisions are random. In future versions, we will implement a markov-string like algorithm to emit predictions, optimize the riemannian pipeline, and also implement other classification methods, such as deep neural networks.

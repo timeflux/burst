@@ -22,32 +22,37 @@ graphs:
       event_start_accumulation: calibration_begins
       event_stop_accumulation: calibration_ends
       event_start_training: calibration_ends
+      preprocessing:
+        - module: estimators.preprocessing
+          class: UnderSample
       steps:
         - module: timeflux.estimators.transformers.shape
           class: Transpose
           args:
             axes: [0, 2, 1]
-        # - module: pyriemann.estimation
-        #   class: XdawnCovariances
-        #   args:
-        #     nfilter: 4
-        #     estimator: lwf
-        #     xdawn_estimator: scm
-        # - module: pyriemann.tangentspace
-        #   class: TangentSpace
-        #   args:
-        #     metric: riemann
-        # - module: sklearn.discriminant_analysis
-        #   class: LinearDiscriminantAnalysis
-        #   args:
-        #     solver: lsqr
-        #     shrinkage: auto
+        - module: estimators.burst
+          class: Scale
         - module: pyriemann.estimation
-          class: ERPCovariances
+          class: XdawnCovariances
           args:
-            estimator: oas
-        - module: pyriemann.classification
-          class: MDM
+            nfilter: 4
+            estimator: lwf
+            xdawn_estimator: scm
+        - module: pyriemann.tangentspace
+          class: TangentSpace
+          args:
+            metric: riemann
+        - module: sklearn.discriminant_analysis
+          class: LinearDiscriminantAnalysis
+          args:
+            solver: lsqr
+            shrinkage: auto
+        # - module: pyriemann.estimation
+        #   class: ERPCovariances
+        #   args:
+        #     estimator: oas
+        # - module: pyriemann.classification
+        #   class: MDM
   - id: predict
     module: nodes.predict
     class: Accumulate

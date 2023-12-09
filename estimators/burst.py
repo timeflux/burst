@@ -1,6 +1,20 @@
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, TransformerMixin, ClassifierMixin
 from sklearn.cross_decomposition import CCA
+
+class Scale(BaseEstimator, TransformerMixin):
+
+    def fit(self, X, y=None):
+        self.std = X.std(axis=0)
+        print(X.shape, self.std.shape)
+        return self
+
+    def transform(self, X):
+        return X / self.std #+ 1e-8
+
+    def fit_transform(self, X, y=None):
+        return self.fit(X).transform(X)
+
 
 class MCCA(BaseEstimator, ClassifierMixin):
 
