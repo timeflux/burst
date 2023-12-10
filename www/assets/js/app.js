@@ -261,7 +261,8 @@ class Burst {
         this.io.event('task_begins');
 
         // Initialize scoring
-        let matches = 0;
+        let trials = [];
+        let hits = 0;
         let color = '';
 
         // Cue selected targets and wait for a prediction
@@ -278,9 +279,11 @@ class Burst {
             this.status = 'idle';
             this._reset();
             if (index == predicted) {
-                matches++;
+                hits++;
+                trials.push(1);
                 color = 'success';
             } else {
+                trials.push(0);
                 color = 'failure'
             }
             toggle(this.targets[predicted].element, color);
@@ -290,7 +293,9 @@ class Burst {
         }
 
         // Compute final score
-        this.score = Math.round(matches * 100 / this.options.task.targets.length);
+        const score = hits * 100 / this.options.task.targets.length;
+        this.io.event('score', {score: score, trials: trials});
+        this.score = Math.round(score);
 
         // Pause for a bit
         await sleep(this.options.validation.duration_rest);

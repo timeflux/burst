@@ -150,5 +150,6 @@ filtered = pd.read_hdf(fname, "filtered")
 predictions = pd.read_hdf(fname, "predictions")
 events = pd.read_hdf(fname, "events")
 config = events.loc[events['label'] == "session_begins"]["data"][0]
+score = events.loc[events['label'] == "score"]["data"][0]
 ```
 
