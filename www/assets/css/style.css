@@ -12,7 +12,9 @@
     --target-off-color: #797979;
     --target-on-color: white;
     --target-cue-color: blue;
-    --target-lock-color: green;
+    --target-success-color: green;
+    --target-failure-color: red;
+    --target-lock-color: blue;
     --target-depth: rgba(121, 121, 121, .8);
 }
 
@@ -68,6 +70,14 @@ body {
 
 .target.lock {
     background-color: var(--target-lock-color);
+}
+
+.target.success {
+    background-color: var(--target-success-color);
+}
+
+.target.failure {
+    background-color: var(--target-failure-color);
 }
 
 

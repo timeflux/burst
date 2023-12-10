@@ -70,6 +70,9 @@ graphs:
             {% for CODE in CODES.split() %}
               - "{{CODE}}"
             {% endfor %}
+            task:
+              enabled: true
+              targets: 10
     - id: sub
       module: timeflux.nodes.zmq
       class: Sub

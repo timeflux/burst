@@ -77,6 +77,15 @@ function shuffle(array) {
     }
 }
 
+/**
+ * Generate a random integer
+ *
+ * @param {number} max - the maximum value
+ */
+function get_random_int(max) {
+    return Math.floor(Math.random() * max);
+}
+
 
 /**
  * A Burst VEP controller
@@ -93,6 +102,9 @@ class Burst {
      * @param {number} [options.training.duration_rest] - the rest period before a new target is presented, in ms
      * @param {number} [options.training.duration_cue_on] - the duration of the cue
      * @param {number} [options.training.duration_cue_off] - the duration of the pause before the code starts flashing
+     * @param {Object} [options.task]
+     * @param {boolean} [options.task.enable] - true if the cued task must be enabled, false otherwise
+     * @param {(number|array)} [options.task.targets] - the number of random targets or the list of targets to be cued
      * @param {Object} [options.validation]
      * @param {number} [options.validation.duration_rest] - the rest period before the free run begins, in ms
      * @param {number} [options.validation.duration_lock_on] - the duration of the feedback when a prediction is received
@@ -106,6 +118,8 @@ class Burst {
      * @param {string} [options.colors.target_on] - the target color during the on-state, if stim.type is 'plain' (hexadecimal)
      * @param {string} [options.colors.target_border] - the border color (hexadecimal)
      * @param {string} [options.colors.target_cue] - the cue border color (hexadecimal)
+     * @param {string} [options.colors.target_success] - the target color when the task is successful (hexadecimal)
+     * @param {string} [options.colors.target_failure] - the target color when the task failed (hexadecimal)
      * @param {string} [options.colors.target_lock] - the prediction color (hexadecimal)
      */
     constructor(options = {}) {
@@ -119,6 +133,10 @@ class Burst {
                 duration_rest: 2000,
                 duration_cue_on: 1500,
                 duration_cue_off: 500
+            },
+            task: {
+                enabled: true,
+                targets: 5
             },
             validation: {
                 duration_rest: 2000,
@@ -135,11 +153,12 @@ class Burst {
                 target_on: '#FFFFFF',
                 target_border: '#000000',
                 target_cue: 'blue',
-                target_lock: 'green'
+                target_success: 'green',
+                target_failure: 'red',
+                target_lock: 'blue'
             }
         };
         this.options = merge(default_options, options);
-        //console.log(this.options);
 
         // Initialize UI
         set_css_var('--background-color', this.options.colors.background);
@@ -147,6 +166,8 @@ class Burst {
         set_css_var('--target-on-color', this.options.colors.target_on);
         set_css_var('--target-border-color', this.options.colors.target_border);
         set_css_var('--target-cue-color', this.options.colors.target_cue);
+        set_css_var('--target-success-color', this.options.colors.target_success);
+        set_css_var('--target-failure-color', this.options.colors.target_failure);
         set_css_var('--target-lock-color', this.options.colors.target_lock);
         set_css_var('--target-url', 'url(../img/' + this.options.stim.type + '.png)');
         set_css_var('--target-depth', hex_to_rgba(this.options.colors.target_off, 1 - this.options.stim.depth));
@@ -165,11 +186,22 @@ class Burst {
                 element: targets[target],
             }
         }
-        //console.log(this.targets);
 
-        // Initialize sequence
+        // Initialize sequences
         // Assume that all sequences are of equal length
         this.sequence = new Sequence(this.options.targets[0].length)
+
+        // Initialize cued task
+        this.score = 0;
+        if (this.options.task.enabled) {
+            if (Number.isInteger(this.options.task.targets)) {
+                let tasks = [];
+                for (let i = 0; i < this.options.task.targets; i++) {
+                    tasks.push(get_random_int(this.targets.length));
+                }
+                this.options.task.targets = tasks;
+            }
+        }
 
         // Initialize events
         this.io = new IO();
@@ -185,6 +217,7 @@ class Burst {
 
     }
 
+
     /**
      * Start calibration
      */
@@ -193,13 +226,14 @@ class Burst {
         // Send start event
         this.io.event('calibration_begins');
 
-        // Highlight each target
+        // Cue each target
         let targets = this.targets.slice(0);
         for (let block = 0; block < this.options.training.blocks; block++) {
             shuffle(targets);
             for (let target of targets) {
                 this.target = target.index;
                 await sleep(this.options.training.duration_rest);
+                this.io.event('cue', {target: target.index});
                 toggle(target.element, 'cue');
                 await sleep(this.options.training.duration_cue_on);
                 toggle(target.element, 'cue');
@@ -216,6 +250,56 @@ class Burst {
         this.io.event('calibration_ends');
 
     }
+
+
+    /**
+     * Start the evaluation task
+     */
+    async task() {
+
+        // Send start event
+        this.io.event('task_begins');
+
+        // Initialize scoring
+        let matches = 0;
+        let color = '';
+
+        // Cue selected targets and wait for a prediction
+        for (let index of this.options.task.targets) {
+            let target = this.targets[index];
+            await sleep(this.options.training.duration_rest);
+            this.io.event('cue', {target: target.index});
+            toggle(target.element, 'cue');
+            await sleep(this.options.training.duration_cue_on);
+            toggle(target.element, 'cue');
+            await sleep(this.options.training.duration_cue_off);
+            this.status = 'task';
+            let predicted = await flag('predict');
+            this.status = 'idle';
+            this._reset();
+            if (index == predicted) {
+                matches++;
+                color = 'success';
+            } else {
+                color = 'failure'
+            }
+            toggle(this.targets[predicted].element, color);
+            await sleep(this.options.validation.duration_lock_on);
+            toggle(this.targets[predicted].element, color);
+            await sleep(this.options.validation.duration_lock_off);
+        }
+
+        // Compute final score
+        this.score = Math.round(matches * 100 / this.options.task.targets.length);
+
+        // Pause for a bit
+        await sleep(this.options.validation.duration_rest);
+
+        // Send stop event
+        this.io.event('task_ends');
+
+    }
+
 
     /**
      * Start the main loop
@@ -244,6 +328,7 @@ class Burst {
         this.io.event('validation_ends');
 
     }
+
 
     /**
      * Called on each screen refresh
@@ -284,6 +369,7 @@ class Burst {
         }
 
     }
+
 
     /**
      * Reset targets
@@ -388,6 +474,25 @@ load_settings().then(async settings => {
     )
     await flag('ready');
     toggle('overlay');
+
+    // Cued task
+    if (burst.options.task.enabled) {
+        notify(
+            'All set!',
+            'Now, let us flex these Jedi muscles.<br>Try to activate the designated target.',
+            'Press any key to continue'
+        )
+        await key();
+        toggle('overlay');
+        await burst.task();
+        notify(
+            'Congratulations!',
+            `You have achieved a score of ${burst.score}%.<br>If you want, you can now freely play with the interface.`,
+            'Press any key to continue'
+        )
+        await key();
+        toggle('overlay');
+    }
 
     // Start main loop
     burst.run();
