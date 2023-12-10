@@ -61,7 +61,6 @@ class Accumulate(Node):
                 proba = json.loads(row["data"])["result"][1]
 
                 # Extract epoch meta information
-                self._frames += 1
                 epoch = next(epochs)
                 onset = epoch["epoch"]["onset"]
                 index = epoch["epoch"]["context"]["index"]
@@ -74,6 +73,9 @@ class Accumulate(Node):
                     else:
                         self._recovery = timestamp
                         continue
+
+                # Keep track of the number of iterations
+                self._frames += 1
 
                 # Append to the circular buffers
                 self._probas.append(proba)
@@ -99,7 +101,7 @@ class Accumulate(Node):
                 target = int(indices[0])
                 correlation = correlations[indices[0]]
                 delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
-                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}")
+                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}\tFrame: {self._frames}")
                 if correlation < self.threshold:
                     continue
                 if delta < self.delta:
