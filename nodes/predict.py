@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import json
+from scipy.stats import pearsonr
 from timeflux.helpers.port import make_event
 from timeflux.core.node import Node
 
@@ -11,36 +12,38 @@ class Accumulate(Node):
     When enough confidence is reached for a specific class, a final prediction is made.
 
     Args:
-        min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 100).
+        codes (list): The list of burst codes, one for each target.
+        min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 30).
         max_buffer_size (int): Maximum number of predictions to accumulate for each class (default: 200).
-        recovery (int): Minumum duration in ms required between two consecutive epochs after a prediction (default: 300).
+        threshold (float): Minimum value to reach according to the Pearson correlation coefficient (default: .75)
+        delta (float): Minimum difference percentage to reach between the p-values of the two best candidates (default: .5).
+        recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
 
     Attributes:
         i (Port): Default input, expects DataFrame.
         o (Port): Default output, provides DataFrame
     """
 
-    def __init__(self, min_buffer_size=100, max_buffer_size=200, recovery=300):
+    def __init__(self, codes, min_buffer_size=30, max_buffer_size=200, threshold=.75, delta=.5, recovery=300):
+        self.codes = [[int(bit) for bit in code] for code in codes]
         self.min_buffer_size = min_buffer_size
         self.max_buffer_size = max_buffer_size
         self.recovery = recovery
-        self._buffer = []
+        self.threshold = threshold
+        self.delta = delta
+        self._probas = []
+        self._indices = []
         self._recovery = False
+        self._frames = 0
 
     def update(self):
 
         # Loop through the model events
         if self.i.ready():
 
-            # Debug
-            # self.logger.debug(self.i.data)
-            # self.logger.debug(self.i.meta)
-
             # Get an iterator over epochs, if any
             if "epochs" in self.i.meta:
                 epochs = iter(self.i.meta["epochs"])
-            else:
-                epochs = None
 
             for timestamp, row in self.i.data.iterrows():
 
@@ -50,10 +53,16 @@ class Accumulate(Node):
                     return
 
                 # Check probabilities
-                elif row.label == "predict_proba":
+                if row.label == "predict_proba":
 
-                    # Use the epoch timestamp if available, otherwise use the event timestamp
-                    onset = next(epochs)["epoch"]["onset"]
+                    # Extract proba
+                    self._frames += 1
+                    proba = json.loads(row["data"])["result"][1]
+
+                    # Extract epoch meta information
+                    epoch = next(epochs)
+                    onset = epoch["epoch"]["onset"]
+                    index = epoch["epoch"]["context"]["index"]
                     timestamp = onset.value / 1e6
 
                     # Ignore stale epochs
@@ -64,20 +73,39 @@ class Accumulate(Node):
                             self._recovery = timestamp
                             continue
 
-                    # Append to buffer
-                    proba = json.loads(row["data"])["result"]
-                    self._buffer.append(proba)
-                    if len(self._buffer) > self.max_buffer_size:
-                        self._buffer.pop(0)
-                    if len(self._buffer) < self.min_buffer_size:
+                    # Append to the circular buffers
+                    self._probas.append(proba)
+                    self._indices.append(index)
+                    if len(self._probas) > self.max_buffer_size:
+                        self._probas.pop(0)
+                        self._indices.pop(0)
+                    if len(self._probas) < self.min_buffer_size:
                         continue
 
-                    # TODO: do something with the buffer!
-                    # In this example, we simply output a random target when the minimum buffer size is reached
-                    score = random.random()
-                    target = random.randint(0, 4)
-                    meta = {"timestamp": timestamp, "target": target, "score": score}
-                    self.o.data = make_event("predict", meta, False)
+                    # Compute the Pearson correlation coefficient
+                    correlations = []
+                    pvalues = []
+                    x = self._probas
+                    for code in self.codes:
+                        y = [code[i] for i in self._indices]
+                        correlation, pvalue = pearsonr(x, y)
+                        correlations.append(correlation)
+                        pvalues.append(pvalue)
+
+                    # Make a decision
+                    indices = np.flip(np.argsort(correlations))
+                    target = int(indices[0])
+                    correlation = correlations[indices[0]]
+                    delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
+                    self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}")
+                    if correlation < self.threshold:
+                        continue
+                    if delta < self.delta:
+                        continue
+                    meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
+                    self.o.data = make_event("predict", meta, True)
                     self.logger.debug(meta)
-                    self._buffer = []
+                    self._frames = 0
+                    self._probas = []
+                    self._indices = []
                     self._recovery = timestamp

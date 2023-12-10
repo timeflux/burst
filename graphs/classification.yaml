@@ -56,6 +56,15 @@ graphs:
   - id: predict
     module: nodes.predict
     class: Accumulate
+    params:
+      codes:
+      {% for CODE in CODES.split() %}
+        - "{{CODE}}"
+      {% endfor %}
+      threshold: .2
+      delta: .5
+      min_buffer_size: 20
+      max_buffer_size: 200
   - id: pub
     module: timeflux.nodes.zmq
     class: Pub

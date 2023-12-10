@@ -353,7 +353,7 @@ load_settings().then(async settings => {
                 case 'ready':
                     trigger('ready');
                 case 'predict':
-                    trigger('predict', row.data.target);
+                    trigger('predict', JSON.parse(row.data).target);
             }
         }
     });
