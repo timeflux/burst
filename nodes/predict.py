@@ -15,7 +15,7 @@ class Accumulate(Node):
         codes (list): The list of burst codes, one for each target.
         min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 30).
         max_buffer_size (int): Maximum number of predictions to accumulate for each class (default: 200).
-        threshold (float): Minimum value to reach according to the Pearson correlation coefficient (default: .75)
+        threshold (float): Minimum value to reach according to the Pearson correlation coefficient (default: .75).
         delta (float): Minimum difference percentage to reach between the p-values of the two best candidates (default: .5).
         recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
 
@@ -58,10 +58,10 @@ class Accumulate(Node):
             if row.label == "predict_proba":
 
                 # Extract proba
-                self._frames += 1
                 proba = json.loads(row["data"])["result"][1]
 
                 # Extract epoch meta information
+                self._frames += 1
                 epoch = next(epochs)
                 onset = epoch["epoch"]["onset"]
                 index = epoch["epoch"]["context"]["index"]
@@ -104,6 +104,8 @@ class Accumulate(Node):
                     continue
                 if delta < self.delta:
                     continue
+
+                # Send prediction
                 meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
                 self.o.data = make_event("predict", meta, True)
                 self.logger.debug(meta)
