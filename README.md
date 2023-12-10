@@ -39,6 +39,10 @@ Currently, only the `riemann` machine learning pipeline is available.
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
 
+### Burst codes
+
+Burst codes are defined in a [hook](https://github.com/timeflux/burst/blob/main/hooks/pre.py). This allows the codes to be stored in an environment variable that can be reused in the graphs. In future versions, this will also allow to generate dynamic burst codes.
+
 ### Preprocessing
 
 The default preprocessing consists of the following:
@@ -51,7 +55,7 @@ It can be modified in the [`main.yaml`](https://github.com/timeflux/burst/blob/m
 
 Individual epochs are scaled using the standard deviation of the training set. Class imbalance is handled through random undersampling.
 
-### GUI
+### User interface
 
 The application expects an dictionary of settings.
 
@@ -63,6 +67,8 @@ The application expects an dictionary of settings.
 | training.duration_rest | The rest period before a new target is presented, in ms | 2000 |
 | training.duration_cue_on | The duration of the cue | 1500 |
 | training.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
+| task.enabled | `true` if the cued task must be enabled, `false` otherwise | `true` |
+| task.targets | The number of random targets or the list of targets to be cued | 5 |
 | validation.duration_rest | The rest period before the free run begins, in ms | 2000 |
 | validation.duration_lock_on | The duration of the feedback when a prediction is received | 1500 |
 | validation.duration_lock_off | The rest period after the feedback | 500 |
@@ -73,21 +79,40 @@ The application expects an dictionary of settings.
 | colors.target_on | The target color during the on-state, if stim.type is 'plain' | #FFFFFF |
 | colors.target_border | The border color | #000000 |
 | colors.target_cue | The cue border color | blue |
-| colors.target_lock | The prediction color | green |
+| colors.target_success | The target color when the task is successful | green |
+| colors.target_failure | The target color when the task failed | red |
+| colors.target_lock | The prediction color | blue |
 
 The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. Also see [`app.js`](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
 
-### HTML
+#### HTML
 
 Targets can be freely added in [`index.html`](https://github.com/timeflux/burst/blob/main/www/index.html). Each target must have a `target` class. Targets will be identified in DOM order (i.e. the first target in `index.html` will have the `0` id). There must be as many HTML elements as there are burst codes.
 
-### CSS
+#### CSS
 
 The shape, position, and colors of the targets can be further adjusted in [`custom.css`](https://github.com/timeflux/burst/blob/main/www/assets/css/custom.css).
 
-### Images
+#### Images
 
 To create a new stimulus type, simply add a new image in [this folder](https://github.com/timeflux/burst/blob/main/www/assets/img/).
+
+### Predictions
+
+The application classifies single flashes. Epochs are triggered at each frame on 250ms windows. The classification pipeline computes xdawn covariances projected on the tangent space followed by a linear discriminant analysis. The resulting probabilities are [accumulated](https://github.com/timeflux/burst/blob/main/nodes/predict.py) in a circular buffer on which correlation analysis is performed. When enough confidence is reached for a specific target, a final prediction is made.
+
+The accumulation engine is [configurable](https://github.com/timeflux/burst/blob/main/graphs/classification.yaml).
+
+| Setting | Description  | Default |
+|---------|--------------|---------|
+| codes | The list of burst codes, one for each target | |
+| min_buffer_size | Minimum number of predictions to accumulate before emitting a prediction | 30 |
+| max_buffer_size | Maximum number of predictions to accumulate for each class | 200 |
+| threshold | Minimum value to reach according to the Pearson correlation coefficient | .75 |
+| delta | Minimum difference percentage to reach between the p-values of the two best candidates | .5 |
+| recovery | Minimum duration in ms required between two consecutive epochs after a prediction | 300 |
+
+Please note that default values are reasonnably suitable for random data. For real EEG data, the threshold should probably be raised.
 
 ## Running
 
@@ -99,7 +124,13 @@ timeflux -d main.yaml
 
 You can monitor the EEG signal [here](http://localhost:8000/monitor/). The application is accessible at [this address](http://localhost:8000/bvep/).
 
-Maximize your browser window to avoid distractions, and follow the instructions. The session starts with a calibration stage followed by a free selection, 5-target practice.
+
+Maximize your browser window to avoid distractions, and follow the instructions. The session includes the following steps:
+
+- Fixation cross (to ensure that the monitor is directly facing the user)
+- Calibration stage (required to compute the model)
+- Evaluation task (optional)
+- Free selection
 
 When you are done, close the browser tab, and send the `Ctrl+C` command to Timeflux.
 
@@ -116,10 +147,8 @@ import pandas as pd
 fname = "data/20231121-090341.hdf5"
 raw = pd.read_hdf(fname, "raw")
 filtered = pd.read_hdf(fname, "filtered")
+predictions = pd.read_hdf(fname, "predictions")
 events = pd.read_hdf(fname, "events")
 config = events.loc[events['label'] == "session_begins"]["data"][0]
 ```
 
-## Limitations
-
-The application currently classifies single trials. Epochs are triggered for each frame on 250ms windows. The classification pipeline computes xdawn covariances projected on the tangent space followed by a linear discriminant analysis. The probabilities from the classifier are accumulated, but final decisions are random. In future versions, we will implement a markov-string like algorithm to emit predictions, optimize the riemannian pipeline, and also implement other classification methods, such as deep neural networks.
