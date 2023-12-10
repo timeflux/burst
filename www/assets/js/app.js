@@ -103,7 +103,7 @@ class Burst {
      * @param {number} [options.training.duration_cue_on] - the duration of the cue
      * @param {number} [options.training.duration_cue_off] - the duration of the pause before the code starts flashing
      * @param {Object} [options.task]
-     * @param {boolean} [options.task.enable] - true if the cued task must be enabled, false otherwise
+     * @param {boolean} [options.task.enabled] - true if the cued task must be enabled, false otherwise
      * @param {(number|array)} [options.task.targets] - the number of random targets or the list of targets to be cued
      * @param {Object} [options.validation]
      * @param {number} [options.validation.duration_rest] - the rest period before the free run begins, in ms
