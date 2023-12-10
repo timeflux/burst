@@ -38,74 +38,76 @@ class Accumulate(Node):
 
     def update(self):
 
+        # Make sure we have data to work with
+        if not self.i.ready():
+            return
+
+        # Get an iterator over epochs, if any
+        if "epochs" in self.i.meta:
+            epochs = iter(self.i.meta["epochs"])
+
         # Loop through the model events
-        if self.i.ready():
+        for timestamp, row in self.i.data.iterrows():
 
-            # Get an iterator over epochs, if any
-            if "epochs" in self.i.meta:
-                epochs = iter(self.i.meta["epochs"])
+            # Check if the model is fitted and forward the event
+            if row.label == "ready":
+                self.o.data = make_event("ready", False)
+                return
 
-            for timestamp, row in self.i.data.iterrows():
+            # Check probabilities
+            if row.label == "predict_proba":
 
-                # Check if the model is fitted and forward the event
-                if row.label == "ready":
-                    self.o.data = make_event("ready", False)
-                    return
+                # Extract proba
+                self._frames += 1
+                proba = json.loads(row["data"])["result"][1]
 
-                # Check probabilities
-                if row.label == "predict_proba":
+                # Extract epoch meta information
+                epoch = next(epochs)
+                onset = epoch["epoch"]["onset"]
+                index = epoch["epoch"]["context"]["index"]
+                timestamp = onset.value / 1e6
 
-                    # Extract proba
-                    self._frames += 1
-                    proba = json.loads(row["data"])["result"][1]
-
-                    # Extract epoch meta information
-                    epoch = next(epochs)
-                    onset = epoch["epoch"]["onset"]
-                    index = epoch["epoch"]["context"]["index"]
-                    timestamp = onset.value / 1e6
-
-                    # Ignore stale epochs
-                    if self._recovery:
-                        if (timestamp - self._recovery) > self.recovery:
-                            self._recovery = False
-                        else:
-                            self._recovery = timestamp
-                            continue
-
-                    # Append to the circular buffers
-                    self._probas.append(proba)
-                    self._indices.append(index)
-                    if len(self._probas) > self.max_buffer_size:
-                        self._probas.pop(0)
-                        self._indices.pop(0)
-                    if len(self._probas) < self.min_buffer_size:
+                # Ignore stale epochs
+                if self._recovery:
+                    if (timestamp - self._recovery) > self.recovery:
+                        self._recovery = False
+                    else:
+                        self._recovery = timestamp
                         continue
 
-                    # Compute the Pearson correlation coefficient
-                    correlations = []
-                    pvalues = []
-                    x = self._probas
-                    for code in self.codes:
-                        y = [code[i] for i in self._indices]
-                        correlation, pvalue = pearsonr(x, y)
-                        correlations.append(correlation)
-                        pvalues.append(pvalue)
+                # Append to the circular buffers
+                self._probas.append(proba)
+                self._indices.append(index)
+                if len(self._probas) > self.max_buffer_size:
+                    self._probas.pop(0)
+                    self._indices.pop(0)
+                if len(self._probas) < self.min_buffer_size:
+                    continue
 
-                    # Make a decision
-                    indices = np.flip(np.argsort(correlations))
-                    target = int(indices[0])
-                    correlation = correlations[indices[0]]
-                    delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
-                    self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}")
-                    if correlation < self.threshold:
-                        continue
-                    if delta < self.delta:
-                        continue
-                    meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
-                    self.o.data = make_event("predict", meta, True)
-                    self.logger.debug(meta)
-                    self._frames = 0
-                    self._probas = []
-                    self._indices = []
-                    self._recovery = timestamp
+                # Compute the Pearson correlation coefficient
+                correlations = []
+                pvalues = []
+                x = self._probas
+                for code in self.codes:
+                    y = [code[i] for i in self._indices]
+                    correlation, pvalue = pearsonr(x, y)
+                    correlations.append(correlation)
+                    pvalues.append(pvalue)
+
+                # Make a decision
+                indices = np.flip(np.argsort(correlations))
+                target = int(indices[0])
+                correlation = correlations[indices[0]]
+                delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
+                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}")
+                if correlation < self.threshold:
+                    continue
+                if delta < self.delta:
+                    continue
+                meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
+                self.o.data = make_event("predict", meta, True)
+                self.logger.debug(meta)
+                self._frames = 0
+                self._probas = []
+                self._indices = []
+                self._recovery = timestamp
