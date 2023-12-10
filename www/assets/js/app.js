@@ -358,6 +358,15 @@ load_settings().then(async settings => {
         }
     });
 
+    // Display the fixation cross
+    notify(
+        '',
+        '<div class="marker center"></div>',
+        'Press any key to continue'
+    )
+    await key();
+    toggle('overlay');
+
     // Display the initial message
     notify(
         'Welcome',

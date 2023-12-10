@@ -4,6 +4,9 @@
 
 :root {
     --background-color: #797979;
+    --marker-size: 60px;
+    --marker-color: #000000;
+    --marker-thickness: 6px;
     --target-url: url(../img/gabor.png);
     --target-border-color: #000000;
     --target-off-color: #797979;
@@ -27,6 +30,13 @@ body {
 
 .hidden {
     display: none !important;
+}
+
+.center {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
 
 
@@ -106,4 +116,20 @@ body {
     width: 100%;
     text-align: center;
     font-size: 15px;
+}
+
+
+  /******************/
+ /* FIXATION CROSS */
+/******************/
+
+.marker {
+  width: var(--marker-size);
+  height: var(--marker-size);
+  background:
+    linear-gradient(var(--marker-color), var(--marker-color)),
+    linear-gradient(var(--marker-color), var(--marker-color));
+  background-position: center;
+  background-size: 100% var(--marker-thickness), var(--marker-thickness) 100%;
+  background-repeat: no-repeat;
 }
