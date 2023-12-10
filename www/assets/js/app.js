@@ -161,6 +161,7 @@ class Burst {
         this.options = merge(default_options, options);
 
         // Initialize UI
+        if (this.options.stim.type != 'plain') this.options.colors.target_on = this.options.colors.target_off;
         set_css_var('--background-color', this.options.colors.background);
         set_css_var('--target-off-color', this.options.colors.target_off);
         set_css_var('--target-on-color', this.options.colors.target_on);
