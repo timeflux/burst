@@ -114,6 +114,8 @@ class Burst {
      * @param {number} [options.stim.depth] - the stimulus opacity (0-1)
      * @param {Object} [options.colors]
      * @param {string} [options.colors.background] - the background color (hexadecimal)
+     * @param {string} [options.colors.text] - the text color (hexadecimal)
+     * @param {string} [options.colors.cross] - the fixation cross color (hexadecimal)
      * @param {string} [options.colors.target_off] - the target color during the off-state (hexadecimal)
      * @param {string} [options.colors.target_on] - the target color during the on-state, if stim.type is 'plain' (hexadecimal)
      * @param {string} [options.colors.target_border] - the border color (hexadecimal)
@@ -148,7 +150,9 @@ class Burst {
                 depth: .8
             },
             colors: {
-                background: '#797979',
+                background: '#202020',
+                text: '#FFFFFF',
+                cross: '#FFFFFF',
                 target_off: '#797979',
                 target_on: '#FFFFFF',
                 target_border: '#000000',
@@ -163,6 +167,8 @@ class Burst {
         // Initialize UI
         if (this.options.stim.type != 'plain') this.options.colors.target_on = this.options.colors.target_off;
         set_css_var('--background-color', this.options.colors.background);
+        set_css_var('--text-color', this.options.colors.text);
+        set_css_var('--marker-color', this.options.colors.cross);
         set_css_var('--target-off-color', this.options.colors.target_off);
         set_css_var('--target-on-color', this.options.colors.target_on);
         set_css_var('--target-border-color', this.options.colors.target_border);
@@ -475,7 +481,7 @@ load_settings().then(async settings => {
     // Wait for model training
     notify(
         'Training the model',
-        '<img src="assets/img/spinner.png" />',
+        '<img src="assets/img/spinner_white.apng" />',
         'Please wait'
     )
     await flag('ready');
@@ -493,7 +499,7 @@ load_settings().then(async settings => {
         await burst.task();
         notify(
             'Congratulations!',
-            `You have achieved a score of ${burst.score}%.<br>If you want, you can now freely play with the interface.`,
+            `You achieved a score of ${burst.score}%.<br>If you want, you can now freely play with the interface.`,
             'Press any key to continue'
         )
         await key();

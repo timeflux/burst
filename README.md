@@ -74,7 +74,9 @@ The application expects an dictionary of settings.
 | validation.duration_lock_off | The rest period after the feedback | 500 |
 | stim.type | The stimulus type ('gabord', 'ricker', 'face', 'plain') | gabor |
 | stim.depth | The stimulus opacity (between 0 and 1) | 0.8 |
-| colors.background | The background color | #797979 |
+| colors.background | The background color | #202020 |
+| colors.text | The text color | #FFFFFF |
+| colors.cross | The fixation cross color | #FFFFFF |
 | colors.target_off | The target color during the off-state | #797979 |
 | colors.target_on | The target color during the on-state, if stim.type is 'plain' | #FFFFFF |
 | colors.target_border | The border color | #000000 |

@@ -4,6 +4,7 @@
 
 :root {
     --background-color: #797979;
+    --text-color: #000000;
     --marker-size: 60px;
     --marker-color: #000000;
     --marker-thickness: 6px;
@@ -15,7 +16,7 @@
     --target-success-color: green;
     --target-failure-color: red;
     --target-lock-color: blue;
-    --target-depth: rgba(121, 121, 121, .8);
+    --target-depth: rgba(121, 121, 121, .2);
 }
 
 
@@ -26,6 +27,7 @@
 body {
     font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
     background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 * { outline: none; }
