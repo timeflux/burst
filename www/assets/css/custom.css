@@ -1,3 +1,4 @@
+/*
 #target-01 {
 	left: calc(50% - 75px);
 	top: calc(50% - 75px - 200px);
@@ -18,6 +19,37 @@
 	top: calc(50% - 75px);
 }
 
+#target-05 {
+	left: calc(50% - 75px);
+	top: calc(50% - 75px);
+}
+*/
+
+/* Top */
+#target-01 {
+	left: calc(50% - 75px);
+	top: 20px;
+}
+
+/* Right */
+#target-02 {
+	right: 20px;
+	top: calc(50% - 75px);
+}
+
+/* Bottom */
+#target-03 {
+	left: calc(50% - 75px);
+	bottom: 20px;
+}
+
+/* Left */
+#target-04 {
+	left: 20px;
+	top: calc(50% - 75px);
+}
+
+/* Center */
 #target-05 {
 	left: calc(50% - 75px);
 	top: calc(50% - 75px);
