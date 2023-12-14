@@ -5,6 +5,10 @@ from scipy.stats import pearsonr
 from timeflux.helpers.port import make_event
 from timeflux.core.node import Node
 
+# Capture Pearson correlation warnings and throw exceptions
+import warnings
+warnings.filterwarnings("error", module="scipy.stats")
+
 class Accumulate(Node):
     """ Accumulation of probabilities
 
@@ -92,7 +96,12 @@ class Accumulate(Node):
                 x = self._probas
                 for code in self.codes:
                     y = [code[i] for i in self._indices]
-                    correlation, pvalue = pearsonr(x, y)
+                    try:
+                        correlation, pvalue = pearsonr(x, y)
+                    except:
+                        # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
+                        # and NaN will be returned. In this case, we force the correlation value to 0.
+                        correlation = 0
                     correlations.append(correlation)
                     pvalues.append(pvalue)
 
