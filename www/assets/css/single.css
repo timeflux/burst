@@ -1,0 +1,4 @@
+#layout-single .target {
+	left: calc(50% - 75px);
+	top: calc(50% - 75px);
+}

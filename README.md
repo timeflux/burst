@@ -19,6 +19,23 @@ Then simply clone this repository:
 git clone https://github.com/timeflux/burst.git
 ```
 
+## Stages, layouts, and tasks
+
+The application life cycle has two main stages:
+
+- The calibration procedure
+- Zero or more evaluation tasks
+
+These two stages can have different layouts (for example, one single target for the calibration stage and either the original 5-target layout or the 11-class keyboard for the evaluation tasks). Currently, all the evaluation tasks must share the same layout.
+
+Three task types are available:
+
+- A cued task where participants are asked to activate the designated target
+- A sequence task where the goal is to activate a sequence of targets identified on a virtual keyboard
+- A free-running task
+
+Most of the times (but not always!), tasks and layouts are independent. The sequence task is only available for the keyboard layout.
+
 ## Configuration
 
 The application can be fine-tuned in a number of ways.
@@ -36,6 +53,8 @@ Currently, only the `riemann` machine learning pipeline is available.
 | DEVICE | EEG device | dummy |
 | EPOCH | Epoch length, in seconds, used for classification | 0.25 |
 | PIPELINE | Classification pipeline (riemann, eegnet) | riemann |
+| CALIBRATION_LAYOUT | The layout used for calibration (single, simple, keyboard) | single |
+| TASK_LAYOUT | The layout used for the main task (simple, keyboard) | simple |
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
 
@@ -61,17 +80,24 @@ The application expects an dictionary of settings.
 
 | Setting | Description  | Default |
 |---------|--------------|---------|
-| targets | A list of burst code (one per target) | See `main.yaml` |
-| training.blocks | The number of rounds for each target during calibration | 3 |
-| training.repetitions | The number of repetitions for each target during each block | 2 |
-| training.duration_rest | The rest period before a new target is presented, in ms | 2000 |
-| training.duration_cue_on | The duration of the cue | 1500 |
-| training.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
-| task.enabled | `true` if the cued task must be enabled, `false` otherwise | `true` |
-| task.targets | The number of random targets or the list of targets to be cued | 5 |
-| validation.duration_rest | The rest period before the free run begins, in ms | 2000 |
-| validation.duration_lock_on | The duration of the feedback when a prediction is received | 1500 |
-| validation.duration_lock_off | The rest period after the feedback | 500 |
+| codes.calibration | The list of burst codes for the calibration layout (one per target) | |
+| codes.task | The list of burst codes for the task layout (one per target) | |
+| layouts.calibration | The layout for the calibration stage ('single', 'simple', 'keyboard') | single |
+| layouts.task | The layout for the task stages ('simple', 'keyboard') | keyboard |
+| calibration.blocks | The number of rounds during calibration | 5 |
+| calibration.repetitions | The number of cycles for each target | 3 |
+| calibration.duration_rest | The rest period before a new target is presented, in ms | 2000 |
+| calibration.duration_cue_on | The duration of the cue | 1500 |
+| calibration.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
+| task.cue.enable | `true` if the cued task must be enabled, `false` otherwise | `true` |
+| task.cue.targets | The number of random targets or the list of targets to be cued | 10 |
+| task.sequence.enable | `true` if the sequence task must be enabled, `false` otherwise | `true` |
+| task.sequence.sequences | The number of random sequences or the list of sequences to be typed | 10 |
+| task.sequence.cue_target | `true` if target cues must be enabled, `false` otherwise | `false` |
+| task.sequence.cue_feedback | `true` if feedback cues must be enabled, `false` otherwise | `true` |
+| run.duration_rest | The rest period before the free run begins, in ms | 2000 |
+| run.duration_lock_on | The duration of the feedback when a prediction is received | 1500 |
+| run.duration_lock_off | The rest period after the feedback | 500 |
 | stim.type | The stimulus type ('gabord', 'ricker', 'face', 'plain') | gabor |
 | stim.depth | The stimulus opacity (between 0 and 1) | 0.8 |
 | colors.background | The background color | #202020 |
@@ -89,11 +115,12 @@ The default settings can be changed in the [`main.yaml`](https://github.com/time
 
 #### HTML
 
-Targets can be freely added in [`index.html`](https://github.com/timeflux/burst/blob/main/www/index.html). Each target must have a `target` class. Targets will be identified in DOM order (i.e. the first target in `index.html` will have the `0` id). There must be as many HTML elements as there are burst codes.
+Targets and layouts can be freely added in [`index.html`](https://github.com/timeflux/burst/blob/main/www/index.html).
+Layouts are container divs with an id starting with `layout-`. Each target must have a `target` class. Targets are identified in DOM order for each layout (i.e. the first target in the `layout-simple` div in `index.html` will have the `0` id). There must be as many HTML elements as there are burst codes associated with the layout.
 
 #### CSS
 
-The shape, position, and colors of the targets can be further adjusted in [`custom.css`](https://github.com/timeflux/burst/blob/main/www/assets/css/custom.css).
+Each individual layout has an associated stylesheet. The shape, position, and colors of the targets can be further adjusted in [`custom.css`](https://github.com/timeflux/burst/blob/main/www/assets/css/custom.css).
 
 #### Images
 
@@ -124,14 +151,14 @@ Run the following:
 timeflux -d main.yaml
 ```
 
-You can monitor the EEG signal [here](http://localhost:8000/monitor/). The application is accessible at [this address](http://localhost:8000/bvep/).
+You can monitor the EEG signal [here](http://localhost:8000/monitor/). The application is accessible at [this address](http://localhost:8000/app/).
 
 
 Maximize your browser window to avoid distractions, and follow the instructions. The session includes the following steps:
 
 - Fixation cross (to ensure that the monitor is directly facing the user)
 - Calibration stage (required to compute the model)
-- Evaluation task (optional)
+- Zero or more evaluation tasks
 - Free selection
 
 When you are done, close the browser tab, and send the `Ctrl+C` command to Timeflux.
@@ -152,6 +179,6 @@ filtered = pd.read_hdf(fname, "filtered")
 predictions = pd.read_hdf(fname, "predictions")
 events = pd.read_hdf(fname, "events")
 config = events.loc[events['label'] == "session_begins"]["data"][0]
-score = events.loc[events['label'] == "score"]["data"][0]
+scores = events.loc[events['label'] == "task_ends"]["data"]
 ```
 

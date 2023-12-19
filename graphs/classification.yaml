@@ -58,7 +58,7 @@ graphs:
     class: Accumulate
     params:
       codes:
-      {% for CODE in CODES.split() %}
+      {% for CODE in TASK_CODES.split() %}
         - "{{CODE}}"
       {% endfor %}
       threshold: .2

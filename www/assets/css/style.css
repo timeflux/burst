@@ -39,6 +39,10 @@ body {
     display: none !important;
 }
 
+.invisible {
+    visibility: hidden !important;
+}
+
 .center {
     position: fixed;
     left: 50%;
@@ -51,7 +55,7 @@ body {
  /* TARGET */
 /**********/
 
-#targets {
+.layout {
   position: absolute;
   margin: auto;
   left: 0;

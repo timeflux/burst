@@ -28,6 +28,50 @@ function toggle(element, cls = 'hidden') {
 }
 
 /**
+ * Set HTML content for the given element
+ *
+ * @param {string|object} element - element query or DOM object
+ * @param {string} content - HTML content
+ * @param {string} [cls] - classes
+ */
+function set_content(element, content, cls = '') {
+    if (typeof element === 'string') {
+        element = document.querySelector(element);
+    }
+    if (element === null ) return;
+    element.innerHTML = content;
+    element.setAttribute('class', cls);
+}
+
+/**
+ * Set CSS class for the given element
+ *
+ * @param {string|object} element - element query or DOM object
+ * @param {string} cls - classes
+ */
+function set_class(element, cls) {
+    if (typeof element === 'string') {
+        element = document.querySelector(element);
+    }
+    if (element === null ) return;
+    element.classList.add(cls);
+}
+
+/**
+ * Reset CSS class for all elements matching the query
+ *
+ * @param {string} elements - query or NodeList object
+ */
+function reset_class(elements) {
+    if (typeof elements === 'string') {
+        elements = document.querySelectorAll(elements);
+    }
+    for (let element of elements) {
+        element.className = '';
+    }
+}
+
+/**
  * Set a CSS variable
  *
  * @param {string} name - variable name
@@ -78,6 +122,16 @@ function shuffle(array) {
 }
 
 /**
+ * Compare two arrays
+ *
+ * @param {array} a - the first array
+ * @param {array} b - the second array
+ */
+function array_equal(a, b) {
+    return a.length === b.length && a.every((element, index) => element === b[index]);
+}
+
+/**
  * Generate a random integer
  *
  * @param {number} max - the maximum value
@@ -94,21 +148,32 @@ function get_random_int(max) {
 class Burst {
 
     /**
-     * @param {Object} [options]
-     * @param {array} options.targets - a list of burst code (one per target)
-     * @param {Object} [options.training]
-     * @param {number} [options.training.blocks] - the number of rounds for each target during calibration
-     * @param {number} [options.training.repetitions] - the number of repetitions for each target during each block
-     * @param {number} [options.training.duration_rest] - the rest period before a new target is presented, in ms
-     * @param {number} [options.training.duration_cue_on] - the duration of the cue
-     * @param {number} [options.training.duration_cue_off] - the duration of the pause before the code starts flashing
+     * @param {Object} options
+     * @param {Object} options.codes
+     * @param {array} options.codes.calibration - the list of burst codes for the calibration layout (one per target)
+     * @param {array} options.codes.task - the list of burst codes for the task layout (one per target)
+     * @param {Object} [options.layout]
+     * @param {string} [options.layout.calibration] - the layout for the calibration stage ('single', 'simple', 'keyboard')
+     * @param {string} [options.layout.task] - the layout for the task stages ('simple', 'keyboard')
+     * @param {Object} [options.calibration]
+     * @param {number} [options.calibration.blocks] - the number of rounds during calibration
+     * @param {number} [options.calibration.repetitions] - the number of cycles for each target
+     * @param {number} [options.calibration.duration_rest] - the rest period before a new target is presented, in ms
+     * @param {number} [options.calibration.duration_cue_on] - the duration of the cue
+     * @param {number} [options.calibration.duration_cue_off] - the duration of the pause before the code starts flashing
      * @param {Object} [options.task]
-     * @param {boolean} [options.task.enabled] - true if the cued task must be enabled, false otherwise
-     * @param {(number|array)} [options.task.targets] - the number of random targets or the list of targets to be cued
-     * @param {Object} [options.validation]
-     * @param {number} [options.validation.duration_rest] - the rest period before the free run begins, in ms
-     * @param {number} [options.validation.duration_lock_on] - the duration of the feedback when a prediction is received
-     * @param {number} [options.validation.duration_lock_off] - the rest period after the feedback
+     * @param {Object} [options.task.cue]
+     * @param {boolean} [options.task.cue.enable] - true if the cued task must be enabled, false otherwise
+     * @param {(number|array)} [options.task.cue.targets] - the number of random targets or the list of targets to be cued
+     * @param {Object} [options.task.sequence]
+     * @param {boolean} [options.task.sequence.enable] - true if the sequence task must be enabled, false otherwise
+     * @param {(number|array)} [options.task.sequence.sequences] - the number of random sequences or the list of sequences to be typed
+     * @param {boolean} [options.task.sequence.cue_target] - true if target cues must be enabled, false otherwise
+     * @param {boolean} [options.task.sequence.cue_feedback] - true if feedback cues must be enabled, false otherwise
+     * @param {Object} [options.run]
+     * @param {number} [options.run.duration_rest] - the rest period before the free run begins, in ms
+     * @param {number} [options.run.duration_lock_on] - the duration of the feedback when a prediction is received
+     * @param {number} [options.run.duration_lock_off] - the rest period after the feedback
      * @param {Object} [options.stim]
      * @param {string} [options.stim.type] - the stimulus type ('gabord', 'ricker', 'face', 'plain')
      * @param {number} [options.stim.depth] - the stimulus opacity (0-1)
@@ -128,19 +193,34 @@ class Burst {
 
         // Merge options
         let default_options = {
-            targets: [],
-            training: {
+            codes: {
+                calibration: [],
+                task: []
+            },
+            layout: {
+                calibration: 'single',
+                task: 'keyboard'
+            },
+            calibration: {
                 blocks: 5,
-                repetitions: 2,
+                repetitions: 3,
                 duration_rest: 2000,
                 duration_cue_on: 1500,
                 duration_cue_off: 500
             },
             task: {
-                enabled: true,
-                targets: 5
+                cue: {
+                    enable: true,
+                    targets: 10
+                },
+                sequence: {
+                    enable: true,
+                    sequences: 10,
+                    cue_target: false,
+                    cue_feedback: true
+                }
             },
-            validation: {
+            run: {
                 duration_rest: 2000,
                 duration_lock_on: 1500,
                 duration_lock_off: 500
@@ -179,36 +259,57 @@ class Burst {
         set_css_var('--target-url', 'url(../img/' + this.options.stim.type + '.png)');
         set_css_var('--target-depth', hex_to_rgba(this.options.colors.target_off, 1 - this.options.stim.depth));
 
-        // Initialize status
-        this.status = 'idle';
-
-        // Initialize targets
-        this.target = null;
-        this.targets = [];
-        const targets = document.getElementsByClassName('target');
-        for (let target = 0; target < this.options.targets.length; target++) {
-            this.targets[target] = {
-                index: target,
-                pattern: this.options.targets[target],
-                element: targets[target],
-            }
-        }
-
-        // Initialize sequences
-        // Assume that all sequences are of equal length
-        this.sequence = new Sequence(this.options.targets[0].length)
-
-        // Initialize cued task
-        this.score = 0;
-        if (this.options.task.enabled) {
-            if (Number.isInteger(this.options.task.targets)) {
-                let tasks = [];
-                for (let i = 0; i < this.options.task.targets; i++) {
-                    tasks.push(get_random_int(this.targets.length));
+        // Initialize layouts
+        this.layouts = {};
+        for (let stage of ['calibration', 'task']) {
+            this.layouts[stage] = { targets: [], sequence: null };
+            // Targets
+            const container = document.getElementById(`layout-${this.options.layout[stage]}`);
+            const targets = container.getElementsByClassName('target');
+            for (let target = 0; target < this.options.codes[stage].length; target++) {
+                this.layouts[stage].targets[target] = {
+                    index: target,
+                    pattern: this.options.codes[stage][target],
+                    element: targets[target],
+                    label: targets[target].innerText
                 }
-                this.options.task.targets = tasks;
+            }
+            // Sequence - assume that all sequences are of equal length
+            this.layouts[stage].sequence = new Sequence(this.options.codes[stage][0].length)
+        }
+
+        // Initialize tasks
+        // TODO: refactor
+        this.score = 0;
+        if (this.options.task.cue.enable) {
+            if (Number.isInteger(this.options.task.cue.targets)) {
+                let tasks = [];
+                for (let i = 0; i < this.options.task.cue.targets; i++) {
+                    tasks.push(get_random_int(this.layouts.task.targets.length));
+                }
+                this.options.task.cue.targets = tasks;
             }
         }
+        if (this.options.task.sequence.enable) {
+            if (Number.isInteger(this.options.task.sequence.sequences)) {
+                let sequences = [];
+                for (let i = 0; i < this.options.task.sequence.sequences; i++) {
+                    let sequence = [];
+                    for (let j = 0; j < 4; j++) {
+                        sequence.push(get_random_int(this.layouts.task.targets.length - 1));
+                    }
+                    sequences.push(sequence);
+                }
+                this.options.task.sequence.sequences = sequences;
+            }
+        }
+
+        // Initialize status
+        this.running = false;
+        this.stage = 'calibration';
+        this.target = null;
+        this.targets = this.layouts.calibration.targets;
+        this.sequence = this.layouts.calibration.sequence;
 
         // Initialize events
         this.io = new IO();
@@ -233,82 +334,211 @@ class Burst {
         // Send start event
         this.io.event('calibration_begins');
 
-        // Cue each target
-        let targets = this.targets.slice(0);
-        for (let block = 0; block < this.options.training.blocks; block++) {
-            shuffle(targets);
-            for (let target of targets) {
-                this.target = target.index;
-                await sleep(this.options.training.duration_rest);
-                this.io.event('cue', {target: target.index});
-                toggle(target.element, 'cue');
-                await sleep(this.options.training.duration_cue_on);
-                toggle(target.element, 'cue');
-                await sleep(this.options.training.duration_cue_off);
-                this.status = 'calibration';
-                await flag('done');
+        // Generate balanced target cues
+        let targets = [];
+        while (true) {
+            if (targets.length < this.options.calibration.blocks) {
+                targets = targets.concat(Object.values(this.targets.slice(0)));
+                shuffle(targets);
+            }
+            if (targets.length > this.options.calibration.blocks) {
+                targets = targets.slice(0, this.options.calibration.blocks);
+            }
+            if (targets.length == this.options.calibration.blocks) {
+                break;
             }
         }
 
+        // Cue each target
+        for (let target of targets) {
+            this.target = target.index;
+            await sleep(this.options.calibration.duration_rest);
+            this.io.event('cue', {target: target.index});
+            toggle(target.element, 'cue');
+            await sleep(this.options.calibration.duration_cue_on);
+            toggle(target.element, 'cue');
+            await sleep(this.options.calibration.duration_cue_off);
+            this.running = true;
+            await flag('done');
+        }
+
         // Pause for a bit
-        await sleep(this.options.training.duration_rest);
+        await sleep(this.options.calibration.duration_rest);
 
         // Send stop event
         this.io.event('calibration_ends');
+
+        // Set the stage
+        this.stage = 'task';
+        this.targets = this.layouts.task.targets;
+        this.sequence = this.layouts.task.sequence;
 
     }
 
 
     /**
-     * Start the evaluation task
+     * Run the cue evaluation task
      */
-    async task() {
+    async task_cue() {
 
         // Send start event
-        this.io.event('task_begins');
+        this.io.event('task_begins', {task: 'cue'});
 
         // Initialize scoring
-        let trials = [];
-        let hits = 0;
+        this.score = new Score().block();
         let color = '';
 
         // Cue selected targets and wait for a prediction
-        for (let index of this.options.task.targets) {
+        for (let index of this.options.task.cue.targets) {
             let target = this.targets[index];
-            await sleep(this.options.training.duration_rest);
+            await sleep(this.options.calibration.duration_rest);
             this.io.event('cue', {target: target.index});
             toggle(target.element, 'cue');
-            await sleep(this.options.training.duration_cue_on);
+            await sleep(this.options.calibration.duration_cue_on);
             toggle(target.element, 'cue');
-            await sleep(this.options.training.duration_cue_off);
-            this.status = 'task';
-            let predicted = await flag('predict');
-            this.status = 'idle';
+            await sleep(this.options.calibration.duration_cue_off);
+            this.running = true;
+            let event = await flag('predict');
+            this.running = false;
             this._reset();
+            let predicted = event.target;
+            let frames = event.frames;
             if (index == predicted) {
-                hits++;
-                trials.push(1);
+                this.score.trial(1, frames);
                 color = 'success';
             } else {
-                trials.push(0);
-                color = 'failure'
+                this.score.trial(0, frames);
+                color = 'failure';
             }
             toggle(this.targets[predicted].element, color);
-            await sleep(this.options.validation.duration_lock_on);
+            await sleep(this.options.run.duration_lock_on);
             toggle(this.targets[predicted].element, color);
-            await sleep(this.options.validation.duration_lock_off);
+            await sleep(this.options.run.duration_lock_off);
         }
 
-        // Compute final score
-        const score = hits * 100 / this.options.task.targets.length;
-        this.io.event('score', {score: score, trials: trials});
-        this.score = Math.round(score);
-
         // Pause for a bit
-        await sleep(this.options.validation.duration_rest);
+        await sleep(this.options.run.duration_rest);
 
         // Send stop event
-        this.io.event('task_ends');
+        this.io.event('task_ends', {score: this.score.stats()});
+
+    }
+
+
+    /**
+     * Run the sequence evaluation task
+     */
+    async task_sequence() {
+
+        // Send start event
+        this.io.event('task_begins', {task: 'sequence'});
+
+        // Initialize scoring
+        this.score = new Score();
+
+        // Show the feedback
+        toggle('sequence', 'invisible');
+
+        // Register the backspace target
+        const backspace = 10;
+
+        // Cue selected targets and wait for a prediction
+        for (let sequence of this.options.task.sequence.sequences) {
+
+            // Initial feedback
+            set_content('#sequence :nth-child(1)', this.targets[sequence[0]].label, 'active');
+            set_content('#sequence :nth-child(2)', this.targets[sequence[1]].label);
+            set_content('#sequence :nth-child(3)', this.targets[sequence[2]].label);
+            set_content('#sequence :nth-child(4)', this.targets[sequence[3]].label);
+
+            // Initial state
+            let preds = [];
+            let expected = sequence[0];
+            this.score.block();
+
+            while (true) {
+
+                // Cue
+                await sleep(this.options.calibration.duration_rest);
+                if (this.options.task.sequence.cue_target) {
+                    toggle(this.targets[expected].element, 'cue');
+                    await sleep(this.options.calibration.duration_cue_on);
+                    toggle(this.targets[expected].element, 'cue');
+                    await sleep(this.options.calibration.duration_cue_off);
+                }
+
+                // Wait for a prediction
+                this.running = true;
+                let event = await flag('predict');
+                let predicted = event.target;
+                let frames = event.frames;
+                this.running = false;
+                this._reset();
+
+                // Add to history
+                preds.push(predicted);
+
+                // Handle backspace
+                if (predicted === backspace) preds.splice(-2, 2);
+
+                // Did we get it right?
+                let hit = (predicted === expected) ? true : false;
+
+                // Get next expected target
+                expected = sequence[0];
+                for (let i = 0; i < preds.length; i++) {
+                    if (sequence[i] == preds[i]) {
+                        expected = sequence[i + 1];
+                    } else {
+                        expected = backspace;
+                        break;
+                    }
+                }
+
+                // Update the feedback
+                reset_class('#sequence span');
+                for (let i = 0; i < sequence.length; i++) {
+                    let element = `#sequence :nth-child(${i + 1})`;
+                    if (sequence[i] == preds[i]) {
+                        set_class(element, 'success');
+                    } else if (preds[i] != undefined ) {
+                        set_class(element, 'failure');
+                        set_class(element, 'active');
+                        break;
+                    } else if (i == preds.length) {
+                        set_class(element, 'active');
+                        break;
+                    }
+                }
+
+                // Cue
+                let color = 'lock';
+                if (this.options.task.sequence.cue_feedback) {
+                    color = hit ? 'success' : 'failure';
+                }
+                toggle(this.targets[predicted].element, color);
+                await sleep(this.options.run.duration_lock_on);
+                toggle(this.targets[predicted].element, color);
+                await sleep(this.options.run.duration_lock_off);
+
+                // Update score
+                this.score.trial(hit, frames);
+
+                // Full match
+                if (array_equal(sequence, preds)) break;
+
+            }
+
+        }
+
+        // Hide feedback
+        toggle('sequence', 'invisible');
+
+        // Pause for a bit
+        await sleep(this.options.run.duration_rest);
+
+        // Send stop event
+        this.io.event('task_ends', {score: this.score.stats()});
 
     }
 
@@ -319,25 +549,26 @@ class Burst {
     async run() {
 
         // Send start event
-        this.io.event('validation_begins');
+        this.io.event('run_begins');
 
         // Pause for a bit
-        await sleep(this.options.validation.duration_rest);
+        await sleep(this.options.run.duration_rest);
 
         // Run until a prediction is received
         while (true) {
-            this.status = 'validation';
-            let target = await flag('predict');
-            this.status = 'idle';
+            this.running = true;
+            let event = await flag('predict')
+            let target = event.target;
+            this.running = false;
             this._reset();
             toggle(this.targets[target].element, 'lock');
-            await sleep(this.options.validation.duration_lock_on);
+            await sleep(this.options.run.duration_lock_on);
             toggle(this.targets[target].element, 'lock');
-            await sleep(this.options.validation.duration_lock_off);
+            await sleep(this.options.run.duration_lock_off);
         }
 
         // Send stop event
-        this.io.event('validation_ends');
+        this.io.event('run_ends');
 
     }
 
@@ -347,12 +578,12 @@ class Burst {
      */
     _tick(scheduled, called, ellapsed, fps) {
 
-        // Run only during calibration and main loop
-        if (this.status == 'idle') return;
+        // Run only when required
+        if (!this.running) return;
 
         // Send epoch markers
         let meta = {'index': this.sequence.index};
-        if (this.status == 'calibration') {
+        if (this.stage == 'calibration') {
             meta['cue'] = this.target;
             meta['bit'] = parseInt(this.targets[this.target].pattern[this.sequence.index]);
         } else {
@@ -373,8 +604,8 @@ class Burst {
         this.sequence.next();
 
         // Stop calibration for the current target
-        if (this.status == 'calibration') {
-            if (this.sequence.cycle == this.options.training.repetitions) {
+        if (this.stage == 'calibration') {
+            if (this.sequence.cycle == this.options.calibration.repetitions) {
                 trigger('done');
                 this._reset();
             }
@@ -391,7 +622,7 @@ class Burst {
             target.element.classList.remove('on');
             target.element.classList.add('off');
         }
-        this.status = 'idle';
+        this.running = false;
         this.target = null;
         this.sequence.reset();
     }
@@ -438,10 +669,53 @@ class Sequence {
 }
 
 
+class Score {
+
+    constructor() {
+        this.score = [];
+    }
+
+    block() {
+        this.score.push({trials: [], frames: []});
+        return this;
+    }
+
+    trial(hit, frames) {
+        let index = this.score.length - 1;
+        this.score[index].trials.push(hit ? 1 : 0);
+        this.score[index].frames.push(frames);
+    }
+
+    stats() {
+        let stats = { hit_rate: {blocks: [], average: 0}, classification_time: {blocks: [], average: 0} };
+        let all_trials = [];
+        let all_frames = [];
+        for (const block in this.score) {
+            all_trials = all_trials.concat(this.score[block].trials);
+            all_frames = all_frames.concat(this.score[block].frames);
+            stats.hit_rate.blocks[block] = this._hit_rate(this.score[block].trials);
+            stats.classification_time.blocks[block] = this._classification_time(this.score[block].frames);
+        }
+        stats.hit_rate.average = this._hit_rate(all_trials);
+        stats.classification_time.average = this._classification_time(all_frames);
+        return stats;
+    }
+
+    _hit_rate(arr) {
+        return (arr.filter(x => x === 1).length) * 100 / arr.length;
+    }
+
+    _classification_time(arr) {
+        const screen_rate = 60;
+        return (arr.reduce((x, y) => x + y) / arr.length) * 1000 / screen_rate;
+    }
+
+}
+
 load_settings().then(async settings => {
 
     // Initialize
-    let burst = new Burst(settings.bvep);
+    let burst = new Burst(settings.app);
 
     // Handle events
     burst.io.subscribe('predictions');
@@ -451,7 +725,7 @@ load_settings().then(async settings => {
                 case 'ready':
                     trigger('ready');
                 case 'predict':
-                    trigger('predict', JSON.parse(row.data).target);
+                    trigger('predict', JSON.parse(row.data));
             }
         }
     });
@@ -473,10 +747,11 @@ load_settings().then(async settings => {
     )
     await key();
     toggle('overlay');
-    toggle('targets');
 
     // Start calibration
+    toggle(`layout-${burst.options.layout.calibration}`);
     await burst.calibrate();
+    toggle(`layout-${burst.options.layout.calibration}`);
 
     // Wait for model training
     notify(
@@ -487,8 +762,11 @@ load_settings().then(async settings => {
     await flag('ready');
     toggle('overlay');
 
+    // Display main layout
+    toggle(`layout-${burst.options.layout.task}`);
+
     // Cued task
-    if (burst.options.task.enabled) {
+    if (burst.options.task.cue.enable) {
         notify(
             'All set!',
             'Now, let us flex these Jedi muscles.<br>Try to activate the designated target.',
@@ -496,10 +774,31 @@ load_settings().then(async settings => {
         )
         await key();
         toggle('overlay');
-        await burst.task();
+        await burst.task_cue();
+        let stats = burst.score.stats();
+        notify(
+            'Wow!',
+            `You achieved a score of ${Math.round(stats.hit_rate.average)}%.<br>Your average activation time was ${Math.round(stats.classification_time.average)}ms per target.`,
+            'Press any key to continue'
+        )
+        await key();
+        toggle('overlay');
+    }
+
+    // Sequence task
+    if (burst.options.task.sequence.enable && burst.options.layout.task == 'keyboard') {
+        notify(
+            'Ready?',
+            'Now, try to spell the sequence.<br>Use the backspace key if you make an error!',
+            'Press any key to continue'
+        )
+        await key();
+        toggle('overlay');
+        await burst.task_sequence();
+        let stats = burst.score.stats();
         notify(
             'Congratulations!',
-            `You achieved a score of ${burst.score}%.<br>If you want, you can now freely play with the interface.`,
+            `You achieved a score of ${Math.round(stats.hit_rate.average)}%.<br>Your average activation time was ${Math.round(stats.classification_time.average)}ms per target.`,
             'Press any key to continue'
         )
         await key();
@@ -507,6 +806,13 @@ load_settings().then(async settings => {
     }
 
     // Start main loop
+    notify(
+        'Let us play!',
+        'If you want, you can now freely use the interface.<br>No goal, no score. Just have fun!',
+        'Press any key to continue'
+    )
+    await key();
+    toggle('overlay');
     burst.run();
 
 });

@@ -58,21 +58,36 @@ graphs:
       class: UI
       params:
         routes:
-          bvep: ./www
+          app: ./www
         settings:
-          bvep:
+          app:
+            layout:
+              calibration: {{CALIBRATION_LAYOUT}}
+              task: {{TASK_LAYOUT}}
+            codes:
+              calibration:
+              {% for CODE in CALIBRATION_CODES.split() %}
+                - "{{CODE}}"
+              {% endfor %}
+              task:
+              {% for CODE in TASK_CODES.split() %}
+                - "{{CODE}}"
+              {% endfor %}
             stim:
               type: gabor
-            training:
-              blocks: 15
-              repetitions: 1
-            targets:
-            {% for CODE in CODES.split() %}
-              - "{{CODE}}"
-            {% endfor %}
+              depth: .8
+            calibration:
+              blocks: 3
+              repetitions: 5
             task:
-              enabled: true
-              targets: 10
+              cue:
+                enable: true
+                targets: 10
+              sequence:
+                enable: true
+                sequences: 10
+                cue_target: false
+                cue_feedback: true
     - id: sub
       module: timeflux.nodes.zmq
       class: Sub
