@@ -1,9 +1,10 @@
 import os
 import logging
-import subprocess
 
 logger = logging.getLogger("timeflux")
-logger.info(subprocess.check_output(["git", "describe", "--tags"]).strip().decode())
+
+#import subprocess
+#logger.info(subprocess.check_output(["git", "describe", "--tags"]).strip().decode())
 
 codes = [
 	"000000000010000000000000000000001000000000000000000000100000000000000000000010000000000000000000001000000000000000000000100000000000",
