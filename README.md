@@ -163,6 +163,10 @@ Maximize your browser window to avoid distractions, and follow the instructions.
 
 When you are done, close the browser tab, and send the `Ctrl+C` command to Timeflux.
 
+## Application schema
+
+![Application schema](doc/schema.png)
+
 ## Analysing
 
 If anything goes wrong, logs can be found in the `log` folder.
