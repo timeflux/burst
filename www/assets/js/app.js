@@ -437,7 +437,7 @@ class Burst {
         this.score = new Score();
 
         // Show the feedback
-        toggle('sequence', 'invisible');
+        toggle('sequence', 'hidden');
 
         // Register the backspace target
         const backspace = 10;
@@ -532,7 +532,7 @@ class Burst {
         }
 
         // Hide feedback
-        toggle('sequence', 'invisible');
+        toggle('sequence', 'hidden');
 
         // Pause for a bit
         await sleep(this.options.run.duration_rest);
