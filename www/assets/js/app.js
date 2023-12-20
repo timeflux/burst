@@ -482,7 +482,7 @@ class Burst {
                 if (predicted === backspace) preds.splice(-2, 2);
 
                 // Did we get it right?
-                let hit = (predicted === expected) ? true : false;
+                let hit = predicted === expected;
 
                 // Get next expected target
                 expected = sequence[0];
