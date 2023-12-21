@@ -120,7 +120,24 @@ Layouts are container divs with an id starting with `layout-`. Each target must 
 
 #### CSS
 
-Each individual layout has an associated stylesheet. The shape, position, and colors of the targets can be further adjusted in [`custom.css`](https://github.com/timeflux/burst/blob/main/www/assets/css/custom.css).
+Each individual layout has an associated stylesheet. All the layouts are responsive, and will adjust to screen resizes according to a given ratio. The shape, position, and colors of the targets can be further adjusted in [`custom.css`](https://github.com/timeflux/burst/blob/main/www/assets/css/custom.css).
+
+For example, to change the original 3:4 ratio of the _keyboard_ layout to a square:
+
+```css
+#layout-keyboard {
+	aspect-ratio: 1 / 1;
+}
+```
+
+Or, to change the diameter of the target in the _single_ layout:
+
+```css
+#layout-single .target {
+    width: 100px;
+    height: 100px;
+}
+```
 
 #### Images
 
