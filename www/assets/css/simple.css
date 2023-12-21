@@ -4,31 +4,36 @@
 
 /* Top */
 #layout-simple :nth-child(1) {
-	left: calc(50% - 75px);
 	top: 20px;
+    left: 50%;
+    transform: translate(-50%, 0);
 }
 
 /* Right */
 #layout-simple :nth-child(2) {
 	right: 20px;
-	top: calc(50% - 75px);
+	top: 50%;
+	transform: translate(0, -50%);
 }
 
 /* Bottom */
 #layout-simple :nth-child(3) {
-	left: calc(50% - 75px);
 	bottom: 20px;
+    left: 50%;
+    transform: translate(-50%, 0);
 }
 
 /* Left */
 #layout-simple :nth-child(4) {
 	left: 20px;
-	top: calc(50% - 75px);
+	top: 50%;
+	transform: translate(0, -50%);
 }
 
 /* Center */
 #layout-simple :nth-child(5) {
-	left: calc(50% - 75px);
-	top: calc(50% - 75px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
