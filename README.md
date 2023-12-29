@@ -126,7 +126,7 @@ For example, to change the original 3:4 ratio of the _keyboard_ layout to a squa
 
 ```css
 #layout-keyboard {
-	aspect-ratio: 1 / 1;
+    aspect-ratio: 1 / 1;
 }
 ```
 
