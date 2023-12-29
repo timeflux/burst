@@ -58,5 +58,3 @@ random.seed(os.getenv("SEED", None)) # For reproducibility
 
 os.environ["CALIBRATION_CODES"] = get_codes(os.getenv("CALIBRATION_LAYOUT", "single"));
 os.environ["TASK_CODES"] = get_codes(os.getenv("TASK_LAYOUT", "simple"));
-
-gen_codes(10)
