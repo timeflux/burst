@@ -1,10 +1,15 @@
 import os
 import logging
+import random
+import subprocess
 
 logger = logging.getLogger("timeflux")
 
-#import subprocess
-#logger.info(subprocess.check_output(["git", "describe", "--tags"]).strip().decode())
+try:
+	version = subprocess.check_output(["git", "describe", "--tags"]).strip().decode()
+	logger.info(version)
+except:
+	pass
 
 codes = [
 	"000000000010000000000000000000001000000000000000000000100000000000000000000010000000000000000000001000000000000000000000100000000000",
@@ -20,13 +25,38 @@ codes = [
 	"000000000000000000001000000000000000000000100000000000000000000010000000000000000000001000000000000000000000100000000000000000000010",
 ]
 
+def gen_code(length=132, bursts=6, jitter=3, offset=0):
+	code = ["0"] * length
+	for frame in range(offset, length, int(length / bursts)):
+		frame += random.randint(-jitter, jitter)
+		if frame < 0: frame = 0
+		if frame > length - 1: frame = length - 1
+		code[frame] = "1"
+	code = "".join(code)
+	return code
+
+def gen_codes(n, length=132, bursts=6, jitter=3):
+	codes = []
+	offset = length / bursts / n
+	for i in range(n):
+		codes.append(gen_code(length, bursts, jitter, round(offset * i)))
+	random.shuffle(codes)
+	return codes
+
 def get_codes(layout):
 	if layout == "single":
-		return codes[0]
+		#return code[0]
+		return gen_code(offset=10)
 	if layout == "simple":
-		return " ".join(codes[0:5])
+		#return " ".join(codes[0:5])
+		return " ".join(gen_codes(5))
 	if layout == "keyboard":
-		return " ".join(codes[0:11])
+		#return " ".join(codes)
+		return " ".join(gen_codes(11))
+
+random.seed(os.getenv("SEED", None)) # For reproducibility
 
 os.environ["CALIBRATION_CODES"] = get_codes(os.getenv("CALIBRATION_LAYOUT", "single"));
 os.environ["TASK_CODES"] = get_codes(os.getenv("TASK_LAYOUT", "simple"));
+
+gen_codes(10)

@@ -55,12 +55,13 @@ Currently, only the `riemann` machine learning pipeline is available.
 | PIPELINE | Classification pipeline (riemann, eegnet) | riemann |
 | CALIBRATION_LAYOUT | The layout used for calibration (single, simple, keyboard) | single |
 | TASK_LAYOUT | The layout used for the main task (simple, keyboard) | simple |
+| SEED | If set, the code generator will use this random seed for reproducibility purposes | |
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
 
 ### Burst codes
 
-Burst codes are defined in a [hook](https://github.com/timeflux/burst/blob/main/hooks/pre.py). This allows the codes to be stored in an environment variable that can be reused in the graphs. In future versions, this will also allow to generate dynamic burst codes.
+Burst codes are defined in a [hook](https://github.com/timeflux/burst/blob/main/hooks/pre.py). This allows the codes to be stored in an environment variable that can be reused in the graphs. By default, codes are generated dynamically for a length of 132 frames containing 6 bursts with a maximum jitter of 3 frames.
 
 ### Preprocessing
 
