@@ -39,6 +39,14 @@ body {
     display: none !important;
 }
 
+.preload {
+    position:absolute;
+    width:0;
+    height:0;
+    overflow:hidden;
+    z-index: -1;
+}
+
 .center {
     position: fixed;
     left: 50%;
