@@ -391,7 +391,7 @@ class Burst {
         // Cue selected targets and wait for a prediction
         for (let index of this.options.task.cue.targets) {
             let target = this.targets[index];
-            await sleep(this.options.calibration.duration_rest);
+            await sleep(this.options.run.duration_rest);
             this.io.event('cue', {target: target.index});
             toggle(target.element, 'cue');
             await sleep(this.options.calibration.duration_cue_on);
@@ -459,7 +459,7 @@ class Burst {
             while (true) {
 
                 // Cue
-                await sleep(this.options.calibration.duration_rest);
+                await sleep(this.options.run.duration_rest);
                 if (this.options.task.sequence.cue_target) {
                     toggle(this.targets[expected].element, 'cue');
                     await sleep(this.options.calibration.duration_cue_on);
