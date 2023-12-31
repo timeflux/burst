@@ -50,6 +50,9 @@ def get_codes(layout):
 	if layout == "simple":
 		#return " ".join(codes[0:5])
 		return " ".join(gen_codes(5))
+	if layout == "grid":
+		#return " ".join(codes[0:9])
+		return " ".join(gen_codes(9))
 	if layout == "keyboard":
 		#return " ".join(codes)
 		return " ".join(gen_codes(11))

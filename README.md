@@ -53,8 +53,8 @@ Currently, only the `riemann` machine learning pipeline is available.
 | DEVICE | EEG device | dummy |
 | EPOCH | Epoch length, in seconds, used for classification | 0.25 |
 | PIPELINE | Classification pipeline (riemann, eegnet) | riemann |
-| CALIBRATION_LAYOUT | The layout used for calibration (single, simple, keyboard) | single |
-| TASK_LAYOUT | The layout used for the main task (simple, keyboard) | simple |
+| CALIBRATION_LAYOUT | The layout used for calibration (single, simple, grid, keyboard) | single |
+| TASK_LAYOUT | The layout used for the main task (simple, grid, keyboard) | simple |
 | SEED | If set, the code generator will use this random seed for reproducibility purposes | |
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
