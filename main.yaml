@@ -1,5 +1,5 @@
 import:
-  - graphs/{{ DEVICE }}.yaml
+  - graphs/{{DEVICE}}.yaml
   - graphs/classification.yaml
   - graphs/record.yaml
 
@@ -33,7 +33,7 @@ graphs:
       class: IIRFilter
       params:
         filter_type: bandpass
-        frequencies: [1, 40]
+        frequencies: [2, 25]
         order: 2
     - id: pub
       module: timeflux.nodes.zmq
@@ -74,15 +74,15 @@ graphs:
                 - "{{CODE}}"
               {% endfor %}
             stim:
-              type: gabor
+              type: ricker
               depth: .8
             calibration:
-              blocks: 3
-              repetitions: 5
+              blocks: 5
+              repetitions: 3
             task:
               cue:
                 enable: true
-                targets: 10
+                targets: 15
               sequence:
                 enable: true
                 sequences: 10
