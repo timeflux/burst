@@ -26,7 +26,7 @@ The application life cycle has two main stages:
 - The calibration procedure
 - Zero or more evaluation tasks
 
-These two stages can have different layouts (for example, one single target for the calibration stage and either the original 5-target layout or the 11-class keyboard for the evaluation tasks). Currently, all the evaluation tasks must share the same layout.
+These two stages can have different layouts (for example, one single target for the calibration stage and either the original 5-target layout, a simple 9-target grid, or the 11-class keyboard for the evaluation tasks). Currently, all the evaluation tasks must share the same layout.
 
 Three task types are available:
 
