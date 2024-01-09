@@ -59,7 +59,7 @@ def get_codes(layout):
 		return " ".join(gen_codes(11))
 
 # For reproducibility
-seed = os.getenv("SEED", time.time_ns())
+seed = int(os.getenv("SEED", time.time_ns()))
 logger.info(f"Random seed: {seed}")
 random.seed(seed)
 
