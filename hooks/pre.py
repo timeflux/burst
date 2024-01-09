@@ -1,13 +1,14 @@
 import os
 import logging
 import random
+import time
 import subprocess
 
 logger = logging.getLogger("timeflux")
 
 try:
 	version = subprocess.check_output(["git", "describe", "--tags"]).strip().decode()
-	logger.info(version)
+	logger.info(f"Application version: {version}")
 except:
 	pass
 
@@ -57,7 +58,10 @@ def get_codes(layout):
 		#return " ".join(codes)
 		return " ".join(gen_codes(11))
 
-random.seed(os.getenv("SEED", None)) # For reproducibility
+# For reproducibility
+seed = os.getenv("SEED", time.time_ns())
+logger.info(f"Random seed: {seed}")
+random.seed(seed)
 
 os.environ["CALIBRATION_CODES"] = get_codes(os.getenv("CALIBRATION_LAYOUT", "single"));
 os.environ["TASK_CODES"] = get_codes(os.getenv("TASK_LAYOUT", "simple"));
