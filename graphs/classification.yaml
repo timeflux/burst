@@ -53,23 +53,31 @@ graphs:
         #     estimator: oas
         # - module: pyriemann.classification
         #   class: MDM
-  - id: predict
-    module: nodes.predict
-    class: Accumulate
-    params:
-      codes:
-      {% for CODE in TASK_CODES.split() %}
-        - "{{CODE}}"
-      {% endfor %}
-      threshold: .2
-      delta: .5
-      min_buffer_size: 20
-      max_buffer_size: 80
-  - id: pub
-    module: timeflux.nodes.zmq
-    class: Pub
-    params:
-      topic: predictions
+    - id: pomdp
+      module: nodes.pomdp
+      class: POMDP
+      params:
+        solver_path: ''
+        event_start_evaluation: calibration_ends
+        n_targets: 4
+         
+  # - id: predict
+  #   module: nodes.predict
+  #   class: Accumulate
+  #   params:
+  #     codes:
+  #     {% for CODE in TASK_CODES.split() %}
+  #       - "{{CODE}}"
+  #     {% endfor %}
+  #     threshold: .2
+  #     delta: .5
+  #     min_buffer_size: 20
+  #     max_buffer_size: 80
+  # - id: pub
+  #   module: timeflux.nodes.zmq
+  #   class: Pub
+  #   params:
+  #     topic: predictions
   # - id: display
   #   module: timeflux.nodes.debug
   #   class: Display
@@ -82,13 +90,17 @@ graphs:
       target: epoch:events
     - source: sub:events
       target: classification:events
+    - source: sub:events
+      target: pomdp:events
     - source: epoch:*
       target: classification:training
     - source: epoch:*
       target: classification
     - source: classification:events
-      target: predict
-    - source: predict
+      target: pomdp:evaluation
+    - source: classification:events
+      target: pomdp
+    - source: pomdp
       target: pub
     # - source: classification:events
     #   target: display
