@@ -84,18 +84,22 @@ class POMDP(Node):
 
     Attributes:
         mode: str, default ''
-            Operation mode of the node. It starts as an empty string, meaning the node
-            will remain inactive until an operation mode is specified. The event set to
-            the parameter 'event_start_evaluation' sets this attr to 'evaluation', in
-            which the node will accumulate data and solve the POMDP (see above). After
-            the evaluation phase is completed, the node will enter 'testing' mode
-            until operation is finished.
+            Operation mode of the node. It starts as an empty string, meaning the node will 
+            remain inactive until an operation mode is specified. The event set to the parameter 
+            'event_start_accumulation' sets this attr to 'accumulation', in which the node will 
+            accumulate data. Upon receiving the event set to the parameter 'mode_start_solving', 
+            the mode is set to 'solving' and the POMDP policy is computed (see above). After the 
+            evaluation phase is completed, the node will enter 'testing' mode until operation is 
+            finished.
 
         eval_pred: list of int, default []
             List preserving predicted labels for evaluation
 
         eval_true: list or int, default []
             List preserving true labels for evaluation
+
+        current_cue: int or None
+            Current cue to add to eval_true
             
         problem: pomdp_py Problem object
             POMDP instance holding both agent and environment. This object
@@ -111,7 +115,8 @@ class POMDP(Node):
         n_steps: int
             Number of steps for each POMDP trial. It is equal to the number of
             data windows that can be used per trial considering data_len, epoch_len
-            and time_step.
+            and time_step, plus one extra step for the POMDP to decide after all trial
+            data has been used.
 
         i: port 
             Default input, expects DataFrame
@@ -129,11 +134,13 @@ class POMDP(Node):
         [3] - https://github.com/AdaCompNUS/sarsop
     """
 
-    def __init__(self, solver_path, event_start_evaluation, n_targets, data_len=0.5, epoch_len=1.0,
-                 time_step=0.1, eval_n=8, solving_timeout=60, norm_value=0.3, hit_reward=10,
-                 miss_cost=-100, wait_cost=-1, gamma=0.99):
+    def __init__(self, solver_path, event_start_accumulation, event_start_solving,
+                 n_targets, data_len=0.5, epoch_len=1.0, time_step=0.1, eval_n=8, 
+                 solving_timeout=60, norm_value=0.3, hit_reward=10, miss_cost=-100, 
+                 wait_cost=-1, gamma=0.99):
         self.solver_path = solver_path
-        self.event_start_evaluation = event_start_evaluation
+        self.event_start_accumulation = event_start_accumulation
+        self.event_start_solving = event_start_solving
         self.n_targets = n_targets
         self.data_len = data_len
         self.epoch_len = epoch_len
@@ -148,6 +155,7 @@ class POMDP(Node):
         self.mode = ''
         self.eval_pred = []
         self.eval_true = []
+        self.current_cue = None
         self.problem = None
         self.policy = None
     
@@ -174,24 +182,60 @@ class POMDP(Node):
 
         return norm_conf_matrix
 
-    def update(self):
-        if self.mode == 'evaluation':
-            # Start accumulating events (I don't know how to access events)
-            pred, true = 0, 0
-            self.eval_pred.append(pred)
-            self.eval_true.append(true)
+    def _get_all_states(self):
+        pass
 
-            # Start evaluating when the necessary events are accumulated
-            if len(self.eval_pred) == self.n_targets * self.eval_n * self.n_steps:
-                conf_matrix = self._make_conf_matrix()
-                self._create_problem(conf_matrix)
-                self._compute_policy()
-                self.mode = 'testing'
-            else: 
-                pass
-        elif self.mode == 'testing':
+    def _get_init_belief(self):
+        pass
+
+    def _create_problem(self, conf_matrix):
+        """Create problem object for the POMDP model"""
+        # Create a list of all possible states, and a list of all the possible initial states
+        all_states, all_init_states = self_.get_all_states()
+        init_true_state = random.choice(all_init_states)
+
+        # Get initial belief (uniform across initial states)
+        init_belief = self._get_init_belief(all_states, all_init_states)
+
+        self.problem = TDProblem(init_belief, init_true_state, n_targets=self.n_targets,
+                                 n_steps=self.pomdp_steps, conf_matrix=conf_matrix,
+                                 hit_reward=self.hit_reward, miss_cost=self.miss_cost,
+                                 wait_cost=self.wait_cost, td_observations=False)
+
+    def _compute_policy(self):
+        """Compute POMDP policy"""
+        self.policy = sarsop(self.problem.agent, solver_path=self.solver_path,
+                             discount_factor=self.gamma, timeout=self.solving_timeout,
+                             memory=4096, precision=0.001)
+
+    def update(self):
+        if self.i_event.ready():
+            if self.i_event.data == self.event_start_accumulation:
+                self.mode = 'accumulation' 
+
+        if self.mode == 'accumulation':
+            # Start accumulating events (I don't know how to access events)
+            if not self.i_evaluation.ready():
+                return
+            # Listen to the last cued event
+            if self.i_cue.ready():
+                self.current_cue = self.i_cue.data
+            pred = self.i_evaluation.data
+
+            self.eval_pred.append(pred)
+            self.eval_true.append(self.current_cue)
+
+            if self.i_event_data == self.event_start_solving:
+                self.mode == 'solving'
+
+        # Start evaluating when the necessary events are accumulated
+        if self.mode == 'solving'
+            conf_matrix = self._make_conf_matrix()
+            self._create_problem(conf_matrix)
+            self._compute_policy()
+            self.mode = 'testing'
+
+        if self.mode == 'testing':
             # Main POMDP body
             pass
-        else:  # Passive mode for the node
-            pass 
 
