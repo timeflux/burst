@@ -96,9 +96,9 @@ graphs:
       target: classification:training
     - source: epoch:*
       target: classification
-    - source: classification:events
+    - source: classification:o
       target: pomdp:evaluation
-    - source: classification:events
+    - source: classification:o
       target: pomdp
     - source: pomdp
       target: pub
