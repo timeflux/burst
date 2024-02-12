@@ -154,7 +154,7 @@ class Burst {
      * @param {array} options.codes.task - the list of burst codes for the task layout (one per target)
      * @param {Object} [options.layout]
      * @param {string} [options.layout.calibration] - the layout for the calibration stage ('single', 'simple', 'keyboard')
-     * @param {string} [options.layout.task] - the layout for the task stages ('simple', 'keyboard')
+     * @param {string} [options.layout.task] - the layout for the task stages ('simple', 'grid', keyboard')
      * @param {Object} [options.calibration]
      * @param {number} [options.calibration.blocks] - the number of rounds during calibration
      * @param {number} [options.calibration.repetitions] - the number of cycles for each target
