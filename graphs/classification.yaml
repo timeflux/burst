@@ -22,6 +22,7 @@ graphs:
       event_start_accumulation: calibration_begins
       event_stop_accumulation: calibration_ends
       event_start_training: calibration_ends
+      event_reset: reset
       preprocessing:
         - module: estimators.preprocessing
           class: UnderSample

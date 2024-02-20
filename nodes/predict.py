@@ -35,10 +35,7 @@ class Accumulate(Node):
         self.recovery = recovery
         self.threshold = threshold
         self.delta = delta
-        self._probas = []
-        self._indices = []
-        self._recovery = False
-        self._frames = 0
+        self.reset()
 
     def update(self):
 
@@ -52,6 +49,11 @@ class Accumulate(Node):
 
         # Loop through the model events
         for timestamp, row in self.i.data.iterrows():
+
+            # Reset on event
+            if row.label == "reset":
+                self.logger.debug("Reset")
+                self.reset()
 
             # Check if the model is fitted and forward the event
             if row.label == "ready":
@@ -120,7 +122,12 @@ class Accumulate(Node):
                 meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
                 self.o.data = make_event("predict", meta, True)
                 self.logger.debug(meta)
-                self._frames = 0
-                self._probas = []
-                self._indices = []
+                self.reset()
                 self._recovery = timestamp
+
+
+    def reset(self):
+        self._probas = []
+        self._indices = []
+        self._recovery = False
+        self._frames = 0

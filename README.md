@@ -9,7 +9,7 @@ First install Timeflux and its depedencies in a new environment:
 ```bash
 conda create --name timeflux python=3.10 pip pytables
 conda activate timeflux
-pip install timeflux timeflux_dsp pyriemann imblearn
+pip install timeflux timeflux_ui timeflux_dsp pyriemann imblearn
 timeflux -v
 ```
 
@@ -31,10 +31,10 @@ These two stages can have different layouts (for example, one single target for 
 Three task types are available:
 
 - A cued task where participants are asked to activate the designated target
+- A self-paced task
 - A sequence task where the goal is to activate a sequence of targets identified on a virtual keyboard
-- A free-running task
 
-Most of the times (but not always!), tasks and layouts are independent. The sequence task is only available for the keyboard layout.
+Most of the times, tasks and layouts are independent. This is not always the case, though. For example, the sequence task is only available for the keyboard and simple layout.
 
 ## Configuration
 
@@ -87,6 +87,7 @@ The application expects an dictionary of settings.
 | layouts.task | The layout for the task stages ('simple', 'keyboard') | keyboard |
 | calibration.blocks | The number of rounds during calibration | 5 |
 | calibration.repetitions | The number of cycles for each target | 3 |
+| calibration.active_only | Display only the current target and mask the others | false |
 | calibration.duration_rest | The rest period before a new target is presented, in ms | 2000 |
 | calibration.duration_cue_on | The duration of the cue | 1500 |
 | calibration.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
@@ -176,8 +177,8 @@ Maximize your browser window to avoid distractions, and follow the instructions.
 
 - Fixation cross (to ensure that the monitor is directly facing the user)
 - Calibration stage (required to compute the model)
+- Self-paced selection (use left arrow to restart the calibration and right arrow to continue to the evaluation tasks)
 - Zero or more evaluation tasks
-- Free selection
 
 When you are done, close the browser tab, and send the `Ctrl+C` command to Timeflux.
 

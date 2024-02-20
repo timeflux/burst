@@ -2,6 +2,34 @@
 	aspect-ratio: 1 / 1;
 }
 
+#layout-simple .target {
+	font-size: 50px;
+}
+
+#layout-simple #sequence {
+	padding: 0;
+	font-size: 50px;
+	position: fixed;
+	bottom: 20px;
+	left: 20px;
+}
+
+#layout-simple #sequence span {
+	margin: 0 2px;
+	opacity: 0.2;
+	color: white;
+}
+
+#layout-simple #sequence .success {
+	color: green;
+}
+
+#layout-simple #sequence .active {
+	opacity: 1;
+	text-decoration: underline;
+}
+
+
 /* Top */
 #layout-simple :nth-child(1) {
 	top: 20px;
@@ -36,4 +64,3 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
-
