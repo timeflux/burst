@@ -34,7 +34,7 @@ Three task types are available:
 - A self-paced task
 - A sequence task where the goal is to activate a sequence of targets identified on a virtual keyboard
 
-Most of the times, tasks and layouts are independent. This is not always the case, though. For example, the sequence task is only available for the keyboard and simple layout.
+Most of the times, tasks and layouts are independent. This is not always the case, though. For example, the _sequence_ task is only available for the _keyboard_ and _simple_ layout.
 
 ## Configuration
 
@@ -87,7 +87,7 @@ The application expects an dictionary of settings.
 | layouts.task | The layout for the task stages ('simple', 'keyboard') | keyboard |
 | calibration.blocks | The number of rounds during calibration | 5 |
 | calibration.repetitions | The number of cycles for each target | 3 |
-| calibration.active_only | Display only the current target and mask the others | false |
+| calibration.active_only | Display only the current target and mask the others | `false` |
 | calibration.duration_rest | The rest period before a new target is presented, in ms | 2000 |
 | calibration.duration_cue_on | The duration of the cue | 1500 |
 | calibration.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
