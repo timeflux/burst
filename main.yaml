@@ -74,7 +74,7 @@ graphs:
                 - "{{CODE}}"
               {% endfor %}
             stim:
-              type: ricker
+              type: gabor
               depth: .8
             calibration:
               blocks: 5
