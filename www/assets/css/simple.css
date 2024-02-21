@@ -3,7 +3,8 @@
 }
 
 #layout-simple .target {
-	font-size: 50px;
+	font-size: 30px;
+	color: var(--target-border-color);
 }
 
 #layout-simple #sequence {
