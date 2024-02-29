@@ -22,6 +22,7 @@ class Accumulate(Node):
         threshold (float): Minimum value to reach according to the Pearson correlation coefficient (default: .75).
         delta (float): Minimum difference percentage to reach between the p-values of the two best candidates (default: .5).
         recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
+        pomdp_step (int): Frames to wait between POMDP updates, starting a min_buffer size (default: 6).
 
     Attributes:
         i (Port): Default input, expects DataFrame.
@@ -35,27 +36,72 @@ class Accumulate(Node):
         self.recovery = recovery
         self.threshold = threshold
         self.delta = delta
+        self.pomdp_step = 6
         self._probas = []
         self._indices = []
         self._recovery = False
         self._frames = 0
+        self._current_cue = None
+
+    def _get_correlations(self, x=None):
+        """
+        Compute correlations and p_values on a given array x
+
+        Returns
+        -------
+        correlations: list
+            Array of correlations, with each element representing the correlation between
+            x and one of the true codes
+
+        pvalues: list
+            Array of p-values between x and one of the true codes. Elements from this list
+            correspond to elements in correlations 
+        """
+        correlations = []
+        pvalues = []
+
+        for code in self.codes:
+            # Slice the codes according to current position of our x array
+            y = [code[i] for i in self._indices]
+            try:
+                correlation, pvalue = pearsonr(x, y)
+            except:
+                # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
+                # and NaN will be returned. In this case, we force the correlation value to 0 and a very small
+                # p-value.
+                correlation = 0
+                pvalue = 1e-8
+
+            correlations.append(correlation)
+            pvalues.append(pvalue)
+        
+        return correlations, pvalues
+
+    def pomdp_accumulation(self):
+        """Compute correlations, get candidate and save it for POMDP solving"""
+        pass
 
     def update(self):
 
+        # Keep track of the last cue (used for POMDP solving)
+        if self.i_events.ready():
+            if self.i_events.data['label'].values.any() == 'cue':
+                self._current_cue = json.loads(self.i_events.data['data'].iloc[0])['target']
+                 
         # Make sure we have data to work with
-        if not self.i.ready():
+        if not self.i_clf.ready():
             return
 
         # Get an iterator over epochs, if any
-        if "epochs" in self.i.meta:
-            epochs = iter(self.i.meta["epochs"])
+        if "epochs" in self.i_clf.meta:
+            epochs = iter(self.i_clf.meta["epochs"])
 
         # Loop through the model events
-        for timestamp, row in self.i.data.iterrows():
+        for timestamp, row in self.i_clf.data.iterrows():
 
             # Check if the model is fitted and forward the event
             if row.label == "ready":
-                self.o.data = make_event("ready", False)
+                self.o_pub.data = make_event("ready", False)
                 return
 
             # Check probabilities
@@ -91,26 +137,20 @@ class Accumulate(Node):
                     continue
 
                 # Compute the Pearson correlation coefficient
-                correlations = []
-                pvalues = []
-                x = self._probas
-                for code in self.codes:
-                    y = [code[i] for i in self._indices]
-                    try:
-                        correlation, pvalue = pearsonr(x, y)
-                    except:
-                        # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
-                        # and NaN will be returned. In this case, we force the correlation value to 0.
-                        correlation = 0
-                    correlations.append(correlation)
-                    pvalues.append(pvalue)
+                correlations, pvalues = self._get_correlations(x=self._probas)
+
+                # Compute another correlation for POMDP
+                if self._frames % self.pomdp_step == 0:
+                    self.pomdp_accumulation
 
                 # Make a decision
                 indices = np.flip(np.argsort(correlations))
                 target = int(indices[0])
+                self.o_pomdp.data = make_event('predict', {'target': target}, True)
                 correlation = correlations[indices[0]]
                 delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
-                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}\tFrame: {self._frames}")
+                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: " \
+                                  f"{delta:.4f}\tFrame: {self._frames}\tTrue: {self._current_cue}")
                 if correlation < self.threshold:
                     continue
                 if delta < self.delta:
@@ -118,7 +158,7 @@ class Accumulate(Node):
 
                 # Send prediction
                 meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
-                self.o.data = make_event("predict", meta, True)
+                self.o_pub.data = make_event("predict", meta, True)
                 self.logger.debug(meta)
                 self._frames = 0
                 self._probas = []

@@ -53,36 +53,40 @@ graphs:
         #     estimator: oas
         # - module: pyriemann.classification
         #   class: MDM
-    - id: pomdp
-      module: nodes.pomdp
-      class: POMDP
-      params:
-        solver_path: ''
-        event_start_evaluation: calibration_ends
-        n_targets: 4
+  - id: pomdp
+    module: nodes.pomdp
+    class: POMDP
+    params:
+      solver_path: ''
+      event_start_accumulation: calibration_ends
+      event_start_solving: cue_ends
+      n_targets: 4
          
-  # - id: predict
-  #   module: nodes.predict
-  #   class: Accumulate
-  #   params:
-  #     codes:
-  #     {% for CODE in TASK_CODES.split() %}
-  #       - "{{CODE}}"
-  #     {% endfor %}
-  #     threshold: .2
-  #     delta: .5
-  #     min_buffer_size: 20
-  #     max_buffer_size: 80
-  # - id: pub
-  #   module: timeflux.nodes.zmq
-  #   class: Pub
-  #   params:
-  #     topic: predictions
+  - id: predict
+    module: nodes.predict
+    class: Accumulate
+    params:
+      codes:
+      {% for CODE in TASK_CODES.split() %}
+        - "{{CODE}}"
+      {% endfor %}
+      threshold: .2
+      delta: .5
+      min_buffer_size: 30
+      max_buffer_size: 90
+  - id: pub
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: predictions
   # - id: display
   #   module: timeflux.nodes.debug
   #   class: Display
   #   params:
   #     meta: true
+  - id: debug
+    module: nodes.data_filter
+    class: DataFilter
   edges:
     - source: sub:filtered
       target: epoch
@@ -91,16 +95,14 @@ graphs:
     - source: sub:events
       target: classification:events
     - source: sub:events
-      target: pomdp:events
+      target: predict:events
     - source: epoch:*
       target: classification:training
     - source: epoch:*
       target: classification
-    - source: classification:o
-      target: pomdp:evaluation
-    - source: classification:o
-      target: pomdp
-    - source: pomdp
+    - source: classification:events
+      target: predict:clf
+    - source: predict:pub
       target: pub
     # - source: classification:events
     #   target: display

@@ -163,7 +163,7 @@ class POMDP(Node):
     def n_steps(self):
         time_steps = list(np.round(np.arange(0, self.epoch_len + 0.01, self.time_step), 2))
         n_steps = len(time_steps)
-
+    
         return n_steps
 
     def _normalize_conf_matrix(self, conf_matrix):
@@ -209,33 +209,49 @@ class POMDP(Node):
                              memory=4096, precision=0.001)
 
     def update(self):
-        if self.i_event.ready():
-            if self.i_event.data == self.event_start_accumulation:
-                self.mode = 'accumulation' 
+        if not self.i_events.ready():
+            return
 
-        if self.mode == 'accumulation':
-            # Start accumulating events (I don't know how to access events)
-            if not self.i_evaluation.ready():
-                return
-            # Listen to the last cued event
-            if self.i_cue.ready():
-                self.current_cue = self.i_cue.data
-            pred = self.i_evaluation.data
+        if self.i_events.data['label'].values.any() == 'cue':
+            self.current_cue = self.i_events.data
 
-            self.eval_pred.append(pred)
-            self.eval_true.append(self.current_cue)
+        if self.i_obs.ready():
+            observation = self.i_obs.data
+            self.logger.debug(f"POMDP: {self.current_cue}")
+            self.logger.debug(f"POMDP {observation}")
 
-            if self.i_event_data == self.event_start_solving:
-                self.mode == 'solving'
+        
 
-        # Start evaluating when the necessary events are accumulated
-        if self.mode == 'solving'
-            conf_matrix = self._make_conf_matrix()
-            self._create_problem(conf_matrix)
-            self._compute_policy()
-            self.mode = 'testing'
 
-        if self.mode == 'testing':
-            # Main POMDP body
-            pass
 
+        
+        #         if self.i_event.ready():
+        #             if self.i_event.data == self.event_start_accumulation:
+        #                 self.mode = 'accumulation' 
+        # 
+        #         if self.mode == 'accumulation':
+        #             # Start accumulating events (I don't know how to access events)
+        #             if not self.i_event.ready():
+        #                 return
+        #             # Listen to the last cued event
+        #             if self.i_cue.ready():
+        #                 self.current_cue = self.i_cue.data
+        #             pred = self.i_evaluation.data
+        # 
+        #             self.eval_pred.append(pred)
+        #             self.eval_true.append(self.current_cue)
+        # 
+        #             if self.i_event_data == self.event_start_solving:
+        #                 self.mode = 'solving'
+        # 
+        #         # Start evaluating when the necessary events are accumulated
+        #         if self.mode == 'solving':
+        #             conf_matrix = self._make_conf_matrix()
+        #             self._create_problem(conf_matrix)
+        #             self._compute_policy()
+        #             self.mode = 'testing'
+        # 
+        #         if self.mode == 'testing':
+        #             # Main POMDP body
+        #             pass
+        # 
