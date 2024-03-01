@@ -5,6 +5,12 @@ from scipy.stats import pearsonr
 from timeflux.helpers.port import make_event
 from timeflux.core.node import Node
 
+import pomdp_py
+from pomdp_py import sarsop
+from bci_pomdp.problem import BaseProblem
+from bci_pomdp.domain import BCIState
+from sklearn.metrics import confusion_matrix
+
 # Capture Pearson correlation warnings and throw exceptions
 import warnings
 warnings.filterwarnings("error", module="scipy.stats")
@@ -23,6 +29,9 @@ class Accumulate(Node):
         delta (float): Minimum difference percentage to reach between the p-values of the two best candidates (default: .5).
         recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
         pomdp_step (int): Frames to wait between POMDP updates, starting a min_buffer size (default: 6).
+        norm_value (float): Parameter used to normalize POMDP's confusion matrix (default: 0.3).
+        problem (pomdp_py POMDP): POMDP problem object (defualt: None).
+        policy (pomdp_py AlphaVectorPolicy): POMDP policy (default: None).
 
     Attributes:
         i (Port): Default input, expects DataFrame.
@@ -37,6 +46,13 @@ class Accumulate(Node):
         self.threshold = threshold
         self.delta = delta
         self.pomdp_step = 6
+        self.norm_value = 0.3
+        self.hit_reward = 10
+        self.miss_cost = -100
+        self.wait_cost = -1
+        self.solver_path = "/home/dcas/j.torre-tresols/gitrepos/sarsop/src/pomdpsol"
+        self.problem = None
+        self.policy = None
         self._current_cue = None
         self._pomdp_preds = []
         self._pomdp_trues = []
@@ -76,6 +92,53 @@ class Accumulate(Node):
         
         return correlations, pvalues
 
+    def _normalize_conf_matrix(self, conf_matrix):
+        """Normalize confusion matrix by mixing it with the uniform distribution [1]"""
+        copy_matrix = conf_matrix.copy()
+        n_class = copy_matrix.shape[0]
+
+        regu_matrix = (1 - self.norm_value) * copy_matrix + self.norm_value * 1 / n_class
+
+        return regu_matrix
+
+    def _make_conf_matrix(self):
+        """Create and normalize confusion matrix"""
+        raw_conf_matrix = confusion_matrix(self._pomdp_trues, self._pomdp_preds, normalize='true')
+        norm_conf_matrix = self._normalize_conf_matrix(raw_conf_matrix)
+
+        return norm_conf_matrix
+
+    def _get_all_states(self):
+        n_targets = len(self.codes)
+        all_states = [BCIState(int(target)) for target in range(n_targets)]
+        all_init_states = all_states.copy()
+
+        return all_states, all_init_states
+
+    def _get_init_belief(self, states, init_states):
+        n_init_states = len(init_states)
+        init_belief = pomdp_py.Histogram({state: 1 / n_init_states if state in init_states else 0 for 
+                                          state in states})
+
+        return init_belief
+
+    def _create_problem(self, conf_matrix):
+        """Create problem object for the POMDP model"""
+        # Create a list of all possible states, and a list of all the possible initial states
+        all_states, all_init_states = self._get_all_states()
+        init_true_state = random.choice(all_init_states)
+
+        # Get initial belief (uniform across initial states)
+        init_belief = self._get_init_belief(all_states, all_init_states)
+
+        self.problem = BaseProblem(init_belief, init_true_state, n_targets=len(self.codes),
+                                   conf_matrix=conf_matrix, hit_reward=self.hit_reward, 
+                                   miss_cost=self.miss_cost, wait_cost=self.wait_cost)
+
+    def _compute_policy(self):
+        self.policy = sarsop(self.problem.agent, pomdpsol_path=self.solver_path,
+                             discount_factor=0.8, timeout=180,
+                             memory=4096, precision=0.001)
     def update(self):
 
         if self.i_events.ready():
@@ -88,6 +151,17 @@ class Accumulate(Node):
                 event = "POMDP start solving"
                 self.logger.debug(event)
                 self.o_pub.data = make_event(event, False)
+
+                # Make and regularize confusion matrix
+                pomdp_cm = self._make_conf_matrix()
+
+                # Create Problem object
+                self._create_problem(pomdp_cm)
+                event = "POMDP problem created"
+                self.logger.debug(event)
+
+                # Compute POMDP policy
+                self._compute_policy()
                  
         # Make sure we have data to work with
         if not self.i_clf.ready():
