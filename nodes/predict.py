@@ -37,13 +37,10 @@ class Accumulate(Node):
         self.threshold = threshold
         self.delta = delta
         self.pomdp_step = 6
-        self._probas = []
-        self._indices = []
-        self._recovery = False
-        self._frames = 0
         self._current_cue = None
         self._pomdp_preds = []
         self._pomdp_trues = []
+        self.reset()
 
     def _get_correlations(self, x=None):
         """
@@ -79,14 +76,6 @@ class Accumulate(Node):
         
         return correlations, pvalues
 
-    def pomdp_accumulation(self):
-        """Compute correlations, get candidate and save it for POMDP solving"""
-        # POMDP works with data windows that must have the same size, so we slice _probas
-        pomdp_probas = self._probas[-self.min_buffer_size:]
-        correlations, pvalues = self._get_correlations(x=pomdp_probas)
-
-
-
     def update(self):
 
         # Keep track of the last cue (used for POMDP solving)
@@ -104,6 +93,11 @@ class Accumulate(Node):
 
         # Loop through the model events
         for timestamp, row in self.i_clf.data.iterrows():
+
+            # Reset on event
+            if row.label == "reset":
+                self.logger.debug("Reset")
+                self.reset()
 
             # Check if the model is fitted and forward the event
             if row.label == "ready":
@@ -175,7 +169,13 @@ class Accumulate(Node):
                 meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
                 self.o_pub.data = make_event("predict", meta, True)
                 self.logger.debug(meta)
-                self._frames = 0
-                self._probas = []
-                self._indices = []
+                self.reset()
                 self._recovery = timestamp
+
+
+    def reset(self):
+        self._probas = []
+        self._indices = []
+        self._recovery = False
+        self._frames = 0
+

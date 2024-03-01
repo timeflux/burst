@@ -74,18 +74,19 @@ graphs:
                 - "{{CODE}}"
               {% endfor %}
             stim:
-              type: ricker
+              type: gabor
               depth: .8
             calibration:
               blocks: 5
-              repetitions: 3
+              repetitions: 1
+              active_only: true
             task:
               cue:
                 enable: true
-                targets: 15
+                targets: 20
               sequence:
                 enable: true
-                sequences: 10
+                sequences: 5
                 cue_target: false
                 cue_feedback: true
     - id: sub
