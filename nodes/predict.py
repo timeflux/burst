@@ -78,10 +78,16 @@ class Accumulate(Node):
 
     def update(self):
 
-        # Keep track of the last cue (used for POMDP solving)
         if self.i_events.ready():
+            # Keep track of the last cue (used for POMDP solving)
             if self.i_events.data['label'].values.any() == 'cue':
                 self._current_cue = json.loads(self.i_events.data['data'].iloc[0])['target']
+
+            # When the cued task ends, start POMDP solving
+            if self.i_events.data['label'].values.any() == 'task_ends':
+                event = "POMDP start solving"
+                self.logger.debug(event)
+                self.o_pub.data = make_event(event, False)
                  
         # Make sure we have data to work with
         if not self.i_clf.ready():
