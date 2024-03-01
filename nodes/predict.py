@@ -42,6 +42,8 @@ class Accumulate(Node):
         self._recovery = False
         self._frames = 0
         self._current_cue = None
+        self._pomdp_preds = []
+        self._pomdp_trues = []
 
     def _get_correlations(self, x=None):
         """
@@ -79,7 +81,11 @@ class Accumulate(Node):
 
     def pomdp_accumulation(self):
         """Compute correlations, get candidate and save it for POMDP solving"""
-        pass
+        # POMDP works with data windows that must have the same size, so we slice _probas
+        pomdp_probas = self._probas[-self.min_buffer_size:]
+        correlations, pvalues = self._get_correlations(x=pomdp_probas)
+
+
 
     def update(self):
 
@@ -141,12 +147,21 @@ class Accumulate(Node):
 
                 # Compute another correlation for POMDP
                 if self._frames % self.pomdp_step == 0:
-                    self.pomdp_accumulation
+                    # POMDP works with data windows that must have the same size, so we slice _probas
+                    pomdp_probas = self._probas[-self.min_buffer_size:]
+                    pomdp_corrs, _ = self._get_correlations(x=pomdp_probas)
+
+                    # Save the highest correlation with the current cue
+                    indices = np.flip(np.argsort(pomdp_corrs))
+                    target = int(indices[0])
+                    self._pomdp_preds.append(target)
+                    self._pomdp_trues.append(self._current_cue)
+                    self.logger.debug(f"POMDP prediction: {target}\tTrue label: {self._current_cue}" \
+                                      f"\tFrame: {self._frames}")
 
                 # Make a decision
                 indices = np.flip(np.argsort(correlations))
                 target = int(indices[0])
-                self.o_pomdp.data = make_event('predict', {'target': target}, True)
                 correlation = correlations[indices[0]]
                 delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
                 self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: " \
