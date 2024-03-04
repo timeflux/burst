@@ -96,6 +96,8 @@ graphs:
     - source: sub:events
       target: classification:events
     - source: sub:events
+      target: debug
+    - source: debug
       target: predict:events
     - source: epoch:*
       target: classification:training
