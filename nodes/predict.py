@@ -203,8 +203,6 @@ class Accumulate(Node):
 
                 # Ignore stale epochs
                 if self._recovery:
-                    print(timestamp)
-                    print(self._recovery)
                     if (timestamp - self._recovery) > self.recovery:
                         self._recovery = False
                     else:
