@@ -85,9 +85,9 @@ graphs:
   #   class: Display
   #   params:
   #     meta: true
-  - id: debug
-    module: nodes.data_filter
-    class: DataFilter
+  # - id: debug
+  #   module: nodes.data_filter
+  #   class: DataFilter
   edges:
     - source: sub:filtered
       target: epoch
@@ -96,8 +96,6 @@ graphs:
     - source: sub:events
       target: classification:events
     - source: sub:events
-      target: debug
-    - source: debug
       target: predict:events
     - source: epoch:*
       target: classification:training
