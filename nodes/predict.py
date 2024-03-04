@@ -208,7 +208,7 @@ class Accumulate(Node):
                     if (timestamp - self._recovery) > self.recovery:
                         self._recovery = False
                     else:
-                        # self._recovery = timestamp
+                        self._recovery = timestamp
                         continue
 
                 # Keep track of the number of iterations
