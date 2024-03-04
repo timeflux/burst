@@ -8,7 +8,7 @@ from timeflux.core.node import Node
 import pomdp_py
 from pomdp_py import sarsop
 from bci_pomdp.problem import BaseProblem
-from bci_pomdp.domain import BCIState
+from bci_pomdp.domain import BCIObservation, BCIState
 from sklearn.metrics import confusion_matrix
 
 # Capture Pearson correlation warnings and throw exceptions
@@ -32,6 +32,7 @@ class Accumulate(Node):
         norm_value (float): Parameter used to normalize POMDP's confusion matrix (default: 0.3).
         problem (pomdp_py POMDP): POMDP problem object (defualt: None).
         policy (pomdp_py AlphaVectorPolicy): POMDP policy (default: None).
+        pomdp_solved (bool): Flag for POMDP policy computation (default: False).
 
     Attributes:
         i (Port): Default input, expects DataFrame.
@@ -53,6 +54,7 @@ class Accumulate(Node):
         self.solver_path = "/home/dcas/j.torre-tresols/gitrepos/sarsop/src/pomdpsol"
         self.problem = None
         self.policy = None
+        self.pomdp_solved = False
         self._current_cue = None
         self._pomdp_preds = []
         self._pomdp_trues = []
@@ -137,7 +139,7 @@ class Accumulate(Node):
 
     def _compute_policy(self):
         self.policy = sarsop(self.problem.agent, pomdpsol_path=self.solver_path,
-                             discount_factor=0.8, timeout=180,
+                             discount_factor=0.8, timeout=30,
                              memory=4096, precision=0.001)
     def update(self):
 
@@ -162,6 +164,9 @@ class Accumulate(Node):
 
                 # Compute POMDP policy
                 self._compute_policy()
+                event = "SARSOP policy computed"
+                self.logger.debug(event)
+                self.pomdp_solved = True
                  
         # Make sure we have data to work with
         if not self.i_clf.ready():
@@ -198,10 +203,12 @@ class Accumulate(Node):
 
                 # Ignore stale epochs
                 if self._recovery:
+                    print(timestamp)
+                    print(self._recovery)
                     if (timestamp - self._recovery) > self.recovery:
                         self._recovery = False
                     else:
-                        self._recovery = timestamp
+                        # self._recovery = timestamp
                         continue
 
                 # Keep track of the number of iterations
@@ -216,9 +223,6 @@ class Accumulate(Node):
                 if len(self._probas) < self.min_buffer_size:
                     continue
 
-                # Compute the Pearson correlation coefficient
-                correlations, pvalues = self._get_correlations(x=self._probas)
-
                 # Compute another correlation for POMDP
                 if self._frames % self.pomdp_step == 0:
                     # POMDP works with data windows that must have the same size, so we slice _probas
@@ -228,25 +232,63 @@ class Accumulate(Node):
                     # Save the highest correlation with the current cue
                     indices = np.flip(np.argsort(pomdp_corrs))
                     target = int(indices[0])
-                    self._pomdp_preds.append(target)
-                    self._pomdp_trues.append(self._current_cue)
-                    self.logger.debug(f"POMDP prediction: {target}\tTrue label: {self._current_cue}" \
-                                      f"\tFrame: {self._frames}")
 
-                # Make a decision
-                indices = np.flip(np.argsort(correlations))
-                target = int(indices[0])
-                correlation = correlations[indices[0]]
-                delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
-                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: " \
-                                  f"{delta:.4f}\tFrame: {self._frames}\tTrue: {self._current_cue}")
-                if correlation < self.threshold:
-                    continue
-                if delta < self.delta:
-                    continue
+                    if self.pomdp_solved:
+                        # Print current belief
+                        cur_belief = self.problem.agent.cur_belief
+                        self.logger.debug(f"Current belief at frame {frame}:")
+                        self.logger.debug(cur_belief)
+
+                        # Get action and max belief when action is taken
+                        action = self.policy.plan(self.problem.agent)
+                        max_b = cur_belief.mpe()
+
+                        # Get observation 
+                        observation = BCIObservation(target)
+
+                        # Update belief
+                        new_belief = pomdp_py.update_histogram_belief(self.problem.agent.cur_belief,
+                                                                      action, observation, 
+                                                                      self.problem.agent.observation_model,
+                                                                      self.problem.agent.transition_model,
+                                                                      static_transition=False)
+                        self.problem.agent.belief = new_belief
+
+                        # If no prediction is done, print and continue
+                        if action.name == 'a_wait':
+                            self.logger.debug(f"Action: {action}\t Observation: {target}")
+                            continue
+                        else:
+                            meta = {"timestamp": timestamp, "target": action.id, 
+                                    "score": max_b, "frames": self._frames}
+                            self.logger.debut(meta)
+
+                    else:
+                        self._pomdp_preds.append(target)
+                        self._pomdp_trues.append(self._current_cue)
+                        self.logger.debug(f"POMDP prediction: {target}\tTrue label: {self._current_cue}" \
+                                          f"\tFrame: {self._frames}")
+
+                if not self.pomdp_solved:
+                    # Compute the Pearson correlation coefficient
+                    correlations, pvalues = self._get_correlations(x=self._probas)
+
+                    # Make a decision
+                    indices = np.flip(np.argsort(correlations))
+                    target = int(indices[0])
+                    correlation = correlations[indices[0]]
+                    delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
+                    self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: " \
+                                      f"{delta:.4f}\tFrame: {self._frames}\tTrue: {self._current_cue}")
+                    if correlation < self.threshold:
+                        continue
+                    if delta < self.delta:
+                        continue
+                    
+                    # Make pred if the thresholds are passed
+                    meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
 
                 # Send prediction
-                meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
                 self.o_pub.data = make_event("predict", meta, True)
                 self.logger.debug(meta)
                 self.reset()
