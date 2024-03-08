@@ -1,0 +1,137 @@
+import:
+  - graphs/{{DEVICE}}.yaml
+  - graphs/classification.yaml
+  # - graphs/record.yaml
+
+graphs:
+
+  - id: Broker
+    nodes:
+    - id: proxy
+      module: timeflux.nodes.zmq
+      class: Broker
+
+  - id: Preprocessing
+    nodes:
+    - id: sub
+      module: timeflux.nodes.zmq
+      class: Sub
+      params:
+        topics: [raw]
+    - id: rereference
+      module: nodes.rereference
+      class: Mean
+    - id: notch
+      module: timeflux_dsp.nodes.filters
+      class: IIRFilter
+      params:
+        filter_type: bandstop
+        frequencies: [48, 52]
+        order: 3
+    - id: bandpass
+      module: timeflux_dsp.nodes.filters
+      class: IIRFilter
+      params:
+        filter_type: bandpass
+        frequencies: [1, 25]
+        order: 2
+    - id: pub
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: filtered
+    edges:
+      - source: sub:raw
+        target: rereference
+      - source: rereference
+        target: notch
+      - source: notch
+        target: bandpass
+      - source: bandpass
+        target: pub
+    rate: 10
+
+  - id: UI
+    nodes:
+    - id: uiexpe
+      module: timeflux_ui.nodes.ui
+      class: UI
+      params:
+        routes:
+          app: ./www/expe
+        settings:
+          app:
+            layout:
+              calibration: {{CALIBRATION_LAYOUT}}
+              task: {{TASK_LAYOUT}}
+            codes:
+              calibration:
+              {% for CODE in CALIBRATION_CODES.split() %}
+                - "{{CODE}}"
+              {% endfor %}
+              task:
+              {% for CODE in TASK_CODES.split() %}
+                - "{{CODE}}"
+              {% endfor %}
+            stim:
+              type: ricker
+              depth: .5
+            calibration:
+              blocks: 7
+              repetitions: 3
+              active_only: true
+            task:
+              cue:
+                enable: true
+                targets: 20
+              sequence:
+                enable: true
+                sequences: 5
+                cue_target: false
+                cue_feedback: true
+    - id: sub
+      module: timeflux.nodes.zmq
+      class: Sub
+      params:
+        topics: [ filtered, predictions , events, raw]
+    - id: pubexpe
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: events
+    edges:
+    - source: uiexpe:events
+      target: pubexpe
+    - source: sub:filtered
+      target: uiexpe:eeg
+    - source: sub:predictions
+      target: uiexpe:predictions
+    rate: 20
+
+  # - id: Debug
+  #   nodes:
+  #   - id: sub
+  #     module: timeflux.nodes.zmq
+  #     class: Sub
+  #     params:
+  #       topics: [ events, predictions ]
+  #   - id: display_events
+  #     module: timeflux.nodes.debug
+  #     class: Display
+  #     params:
+  #       meta: true
+  #   - id: display_predictions
+  #     module: timeflux.nodes.debug
+  #     class: Display
+  #     params:
+  #       meta: true
+  #   edges:
+  #     - source: sub:events
+  #       target: display_events
+  #     - source: sub:predictions
+  #       target: display_predictions
+  #   rate: 10
+
+
+
+

@@ -1,0 +1,173 @@
+  /*************/
+ /* VARIABLES */
+/*************/
+
+:root {
+    --background-color: #797979;
+    --text-color: #000000;
+    --marker-size: 60px;
+    --marker-color: #000000;
+    --marker-thickness: 6px;
+    --target-url: url(../img/gabor.png);
+    --target-border-color: #000000;
+    --target-off-color: #797979;
+    --target-on-color: white;
+    --target-cue-color: blue;
+    --target-success-color: green;
+    --target-failure-color: red;
+    --target-lock-color: blue;
+    --target-depth: rgba(121, 121, 121, .2);
+}
+
+
+  /**********/
+ /* COMMON */
+/**********/
+
+body {
+    font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+* { outline: none; }
+
+.hidden {
+    display: none !important;
+}
+
+.preload {
+    position:absolute;
+    width:0;
+    height:0;
+    overflow:hidden;
+    z-index: -1;
+}
+
+.center {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+  /**********/
+ /* TARGET */
+/**********/
+
+.layout {
+  position: absolute;
+  margin: auto;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.target {
+    width: 150px;
+    height: 150px;
+    line-height: 150px;
+    text-align: center;
+    border-radius: 50%;
+    position: absolute;
+    border: 3px solid var(--target-border-color);
+}
+
+.target.on {
+    background-color: var(--target-on-color);
+    background-image: linear-gradient(var(--target-depth), var(--target-depth)), var(--target-url);
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.target.off {
+    background-color: var(--target-off-color);
+}
+
+.target.cue {
+    border: 3px solid var(--target-cue-color);
+}
+
+.target.lock {
+    background-color: var(--target-lock-color);
+}
+
+.target.success {
+    background-color: var(--target-success-color);
+}
+
+.target.failure {
+    background-color: var(--target-failure-color);
+}
+
+
+  /***********/
+ /* OVERLAY */
+/***********/
+
+#overlay {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--background-color);
+    z-index: 1000;
+    cursor: default;
+}
+
+#title {
+    position: absolute;
+    top: calc(50% - 150px);
+    width: 100%;
+    text-align: center;
+    font-size: 50px;
+}
+
+#message {
+    position: absolute;
+    top: calc(50% - 50px);
+    width: 700px;
+    left:0;
+    right:0;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    font-size: 25px;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+#footer {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 15px;
+}
+
+
+  /******************/
+ /* FIXATION CROSS */
+/******************/
+
+.marker {
+  width: var(--marker-size);
+  height: var(--marker-size);
+  background:
+    linear-gradient(var(--marker-color), var(--marker-color)),
+    linear-gradient(var(--marker-color), var(--marker-color));
+  background-position: center;
+  background-size: 100% var(--marker-thickness), var(--marker-thickness) 100%;
+  background-repeat: no-repeat;
+}

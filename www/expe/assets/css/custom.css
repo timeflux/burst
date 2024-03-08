@@ -1,0 +1,28 @@
+.target {
+	/* Override default here */
+}
+
+.target.on {
+	/* Override default here */
+}
+
+.target.off {
+	/* Override default here */
+}
+
+.target.cue {
+	/* Override default here */
+}
+
+.target.lock {
+	/* Override default here */
+}
+
+#layout-keyboard {
+	aspect-ratio: 1 / 1;
+}
+
+#layout-single .target {
+	width: 120px;
+	height: 120px;
+}

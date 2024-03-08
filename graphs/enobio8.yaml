@@ -1,0 +1,20 @@
+graphs:
+
+  - id: EEG
+    nodes:
+    - id: eeg
+      module: timeflux.nodes.lsl
+      class: Receive
+      params:
+        prop: name
+        value: LSLOutletStreamName-EEG
+        channels: [PO7, O1, Oz, O2, PO8, PO3, POz, PO4]
+    - id: pub
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: raw
+    edges:
+      - source: eeg
+        target: pub
+    rate: 500
