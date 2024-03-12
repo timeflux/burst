@@ -1,2 +1,7 @@
 # Ignore the logs
 log/*
+*.log
+
+# Ignore POMDP files
+*.pomdp
+*.policy
