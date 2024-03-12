@@ -56,7 +56,7 @@ graphs:
         #   class: MDM
   - id: predict
     module: nodes.accumulation
-    class: AccumulationSteadyPred
+    class: AccumulationPOMDP
     params:
       codes:
       {% for CODE in TASK_CODES.split() %}
@@ -83,13 +83,15 @@ graphs:
       target: epoch:events
     - source: sub:events
       target: classification:events
+    - source: sub:events
+      target: predict:events
     - source: epoch:*
       target: classification:training
     - source: epoch:*
       target: classification
     - source: classification:events
-      target: predict
-    - source: predict
+      target: predict:clf
+    - source: predict:pub
       target: pub
     # - source: classification:events
     #   target: display
