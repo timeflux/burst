@@ -103,8 +103,38 @@ class AbstractAccumulation(Node):
     def decision(self):
         ...
 
-    def correlation(self, c1:list[int], c2:list[int]):
-        ...
+    def correlation(self, x:list[int], indices:list[int]):
+        """
+        Compute correlations and p_values on a given array x
+
+        Returns
+        -------
+        correlations: list
+            Array of correlations, with each element representing the correlation between
+            x and one of the true codes
+
+        pvalues: list
+            Array of p-values between x and one of the true codes. Elements from this list
+            correspond to elements in correlations 
+        """ 
+        correlations = []
+        pvalues = []
+
+        for code in self.codes:
+            y = [code[i] for i in indices]
+
+            if np.all((np.array(x) == 0) | (np.array(x) == 1)):
+                # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
+                # and NaN will be returned. In this case, we force the correlation value to 0.
+                correlation = 0
+                pvalue = 1e-8
+            else:
+                correlation, pvalue = pearsonr(x, y)
+
+            correlations.append(correlation)
+            pvalues.append(pvalue)
+        
+        return correlations, pvalues
 
     def reset(self):
         self._probas = []
@@ -120,20 +150,7 @@ class AccumulationPrevalentTarget(AbstractAccumulation):
     
     def decision(self, timestamp):
         # Compute the Pearson correlation coefficient
-        correlations = []
-        pvalues = []
-        x = self._probas
-        for code in self.codes:
-            y = [code[i] for i in self._indices]
-            if np.all((np.array(x) == 0) | (np.array(x) == 1)):
-                # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
-                # and NaN will be returned. In this case, we force the correlation value to 0.
-                correlation = 0
-                pvalue = 1e-8
-            else:
-                correlation, pvalue = pearsonr(x, y)
-            correlations.append(correlation)
-            pvalues.append(pvalue)
+        correlations, indices = self.correlation(x=self._probas, indices=self._indices)
 
         # Make a decision
         indices = np.flip(np.argsort(correlations))
@@ -176,20 +193,7 @@ class AccumulationSteadyPred(AbstractAccumulation):
 
     def decision(self, timestamp):
         # Compute the Pearson correlation coefficient
-        correlations = []
-        pvalues = []
-        x = self._probas
-        for code in self.codes:
-            y = [code[i] for i in self._indices]
-            if np.all((np.array(x) == 0) | (np.array(x) == 1)):
-                # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
-                # and NaN will be returned. In this case, we force the correlation value to 0.
-                correlation = 0
-                pvalue = 1e-8
-            else:
-                correlation, pvalue = pearsonr(x, y)
-            correlations.append(correlation)
-            pvalues.append(pvalue)
+        correlations, pvalues = self.correlation(x=self._probas, indices=self._indices)
 
         # Make a decision
         indices = np.flip(np.argsort(correlations))
