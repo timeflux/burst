@@ -1,3 +1,4 @@
 # Ignore the logs
 log/*
 data/*
+**/__pycache__/
