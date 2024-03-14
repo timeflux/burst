@@ -74,21 +74,39 @@ graphs:
                 - "{{CODE}}"
               {% endfor %}
             stim:
-              type: ricker
-              depth: .5
+              type: {{ STIM_TYPE }} 
+              depth:  {{ STIM_DEPTH }}
             calibration:
-              blocks: 7
-              repetitions: 3
+              blocks: {{ CALIBRATION_BLOCKS }}
+              repetitions: {{ CALIBRATION_STIM_REP }}
               active_only: true
+              duration_rest: {{ CALIBRATION_DURATION_REST }}
+              duration_cue_on: {{ CALIBRATION_DURATION_CUE_ON }}
+              duration_cue_off: {{ CALIBRATION_DURATION_CUE_OFF }}
             task:
               cue:
-                enable: true
-                targets: 20
+                enable: {{ CUED_TASK_ENABLE }}
+                targets: {{ TASK_TARGET_REP }}
               sequence:
-                enable: true
-                sequences: 5
-                cue_target: false
-                cue_feedback: true
+                enable: {{ PINPAD_ENABLE_TASK }}
+                sequences: {{ PINPAD_SEQUENCES }}
+                cue_target: {{ PINPAD_CUE_TARGET }}
+                cue_feedback: {{ PINPAD_CUE_FEEDBACK }}
+            run:
+              duration_rest: 2000
+              duration_lock_on: 1500
+              duration_lock_off: 500
+            colors:
+              background: "#{{ UI_BACKGROUND }}"
+              text: "#{{ UI_TEXT_COLOR }}"
+              cross: "#{{ UI_CROSS_COLOR }}"
+              target_off: "#{{ UI_TARGET_OFF_COLOR }}"
+              target_on: "#{{ UI_TARGET_ON_COLOR }}"
+              target_border: "#{{ UI_TARGET_BORDER_COLOR}}"
+              target_cue: "#{{ UI_TARGET_CUE_COLOR }}"
+              target_success: "#{{ UI_TARGET_SUCCESS_COLOR }}"
+              target_failure: "#{{ UI_TARGET_FAILURE_COLOR }}"
+              target_lock: "#{{ UI_TARGET_LOCK_COLOR }}"
     - id: sub
       module: timeflux.nodes.zmq
       class: Sub
