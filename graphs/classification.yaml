@@ -62,11 +62,6 @@ graphs:
     class: Pub
     params:
       topic: predictions
-  # - id: display
-  #   module: timeflux.nodes.debug
-  #   class: Display
-  #   params:
-  #     meta: true
   edges:
     - source: sub:filtered
       target: epoch

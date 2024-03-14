@@ -1,8 +1,9 @@
 import:
   - graphs/{{DEVICE}}.yaml
   - graphs/classification.yaml
-  # - graphs/record.yaml
-
+  {% if RECORD_DATA == 'true' %}
+  - graphs/record.yaml
+  {% endif %}
 graphs:
 
   - id: Broker
