@@ -16,7 +16,7 @@ except:
 
 crash_bad_param = bool(os.getenv("EXIT_ON_BAD_PARAMETER", "true"))
 
-
+# Defining an easy to use function for error handling
 def error_handling(key, msg, default, force_fail=False) -> None:
 	if crash_bad_param or force_fail:
 		raise ValueError(msg)
@@ -24,6 +24,7 @@ def error_handling(key, msg, default, force_fail=False) -> None:
 		logger.warning(f"{msg}, defaulting to {default}")
 		os.environ[key] = default
 
+# generic method to check the type of an environment variable
 def check_type(key, t:type):
 	if os.environ[key] is None:
 		return False
@@ -33,12 +34,15 @@ def check_type(key, t:type):
 		return False
 	return True
 
+# Specific for int type checking
 def check_int(key) -> bool:
 	return check_type(key, int)
 
+# Specific for float type checking
 def check_float(key) -> bool:
 	return check_type(key, float)
 
+# Specific for bool type checking
 def check_boolean(key) -> bool:
 	return check_type(key, bool)
 
@@ -52,8 +56,6 @@ os.environ["EPOCH"] = os.getenv("EPOCH")
 if not check_float("EPOCH") or float(os.environ["EPOCH"]) <= 0:
 	error_handling("EPOCH", f"EPOCH must be a stricty positive float", 0.20)
 
-# PIPELINE
-
 # Check that it is in single/simple/grid/keyboard
 os.environ["CALIBRATION_LAYOUT"] = os.getenv("CALIBRATION_LAYOUT")
 if os.environ["CALIBRATION_LAYOUT"] not in ["single", "simple", "grid", "keyboard"]:
@@ -63,8 +65,6 @@ if os.environ["CALIBRATION_LAYOUT"] not in ["single", "simple", "grid", "keyboar
 os.environ["TASK_LAYOUT"] = os.getenv("TASK_LAYOUT")
 if os.environ["TASK_LAYOUT"] not in ["simple", "grid", "keyboard"]:
 	error_handling("TASK_LAYOUT", f"TASK_LAYOUT must be one of 'simple', 'grid' or 'keyboard'", "simple")
-
-# CODE_STYLE
 
 # Check that the file exists
 logger.debug(os.getcwd())
@@ -210,10 +210,9 @@ if not check_int("PINPAD_SEQUENCES") or int(os.environ["PINPAD_SEQUENCES"]) <= 0
 # Check MIN_BUFFER <= MAX_BUFFER
 os.environ["MIN_BUFFER_LENGTH"] = os.getenv("MIN_BUFFER_LENGTH")
 if not check_int("MIN_BUFFER_LENGTH") or int(os.environ["MIN_BUFFER_LENGTH"]) <= 0 :
-	error_handling("MIN_BUFFER_LENGTH", f"MIN_BUFFER_LENGTH must be a strictly positive integer")
-
+	error_handling("MIN_BUFFER_LENGTH", f"MIN_BUFFER_LENGTH must be a strictly positive integer", 60)
 if not check_int("MAX_BUFFER_LENGTH") or int(os.environ["MAX_BUFFER_LENGTH"]) <= 0 :
-	error_handling("MAX_BUFFER_LENGTH", f"MAX_BUFFER_LENGTH must be a strictly positive integer")
+	error_handling("MAX_BUFFER_LENGTH", f"MAX_BUFFER_LENGTH must be a strictly positive integer", 80)
 if int(os.environ["MAX_BUFFER_LENGTH"]) < int(os.environ["MIN_BUFFER_LENGTH"]):
 	error_handling("MAX_BUFFER_LENGTH", f"MAX_BUFFER_LENGTH can not be less than MIN_BUFFER_LENGTH", int(os.environ["MIN_BUFFER_LENGTH"]))
 				
@@ -221,10 +220,15 @@ if int(os.environ["MAX_BUFFER_LENGTH"]) < int(os.environ["MIN_BUFFER_LENGTH"]):
 # Check MIN_PRED <= MAX_PRED
 os.environ["MIN_PRED_LENGTH"] = os.getenv("MIN_PRED_LENGTH")
 if not check_int("MIN_PRED_LENGTH") or int(os.environ["MIN_PRED_LENGTH"]) <= 0 :
-	error_handling("MIN_PRED_LENGTH", f"MIN_PRED_LENGTH must be a strictly positive integer")
+	error_handling("MIN_PRED_LENGTH", f"MIN_PRED_LENGTH must be a strictly positive integer", 50)
 if not check_int("MAX_PRED_LENGTH") or int(os.environ["MAX_PRED_LENGTH"]) <= 0 :
-	error_handling("MAX_PRED_LENGTH", f"MAX_PRED_LENGTH must be a strictly positive integer")
+	error_handling("MAX_PRED_LENGTH", f"MAX_PRED_LENGTH must be a strictly positive integer", 200)
 if int(os.environ["MAX_PRED_LENGTH"]) < int(os.environ["MIN_BUFFER_LENGTH"]):
 	error_handling("MAX_PRED_LENGTH", f"MAX_PRED_LENGTH can not be less than MIN_PRED_LENGTH", int(os.environ["MIN_PRED_LENGTH"]))
+
+# Timeflux
+os.environ["RECORD_DATA"] = os.getenv("RECORD_DATA")
+if not check_boolean("RECORD_DATA"):
+	error_handling("RECORD_DATA", f"RECORD_DATA must be a boolean", 'true')
 
 logger.debug("Configuration file loaded successfully")
