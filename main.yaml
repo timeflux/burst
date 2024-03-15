@@ -87,7 +87,7 @@ graphs:
             task:
               cue:
                 enable: {{ CUED_TASK_ENABLE }}
-                targets: {{ TASK_TARGET_REP }}
+                targets: {{ CUED_TASK_TARGET_REP }}
               sequence:
                 enable: {{ PINPAD_ENABLE_TASK }}
                 sequences: {{ PINPAD_SEQUENCES }}
