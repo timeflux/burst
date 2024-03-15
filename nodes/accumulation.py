@@ -562,7 +562,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                 self._pomdp_status = "solved"
 
         # Make sure we have data to work with
-        if not self.i_clf_clf.ready():
+        if not self.i_clf.ready():
             return
 
         # Get an iterator over epochs, if any
