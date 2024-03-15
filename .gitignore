@@ -1,12 +1,10 @@
 # Ignore the logs
 log/*
-<<<<<<< HEAD
 *.log
 
 # Ignore POMDP files
 *.pomdp
 *.policy
-=======
 data/*
 **/__pycache__/
->>>>>>> master
+*.pyc
