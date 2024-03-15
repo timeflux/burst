@@ -599,10 +599,10 @@ class Burst {
                 preds.push(predicted);
 
                 // Handle backspace
-                if (predicted === backspace) preds.splice(-2, 2);
+                if (predicted == backspace) preds.splice(-2, 2);
 
                 // Did we get it right?
-                let hit = predicted === expected;
+                let hit = predicted == expected;
 
                 // Get next expected target
                 expected = sequence[0];

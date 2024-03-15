@@ -57,15 +57,15 @@ class AbstractAccumulation(Node):
     def update(self):
 
         # Make sure we have data to work with
-        if not self.i.ready():
+        if not self.i_clf.ready():
             return
 
         # Get an iterator over epochs, if any
-        if "epochs" in self.i.meta:
-            epochs = iter(self.i.meta["epochs"])
+        if "epochs" in self.i_clf.meta:
+            epochs = iter(self.i_clf.meta["epochs"])
 
         # Loop through the model events
-        for timestamp, row in self.i.data.iterrows():
+        for timestamp, row in self.i_clf.data.iterrows():
 
             # Reset on event
             if row.label == "reset":
@@ -510,7 +510,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
 
         try:
             # Send prediction
-            self.o_pub.data = make_event("predict", meta, True)
+            self.o.data = make_event("predict", meta, True)
             self.logger.debug(meta)
             self.reset()
             self._recovery = timestamp
@@ -535,7 +535,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
             ):
                 event = "POMDP start accumulation"
                 self.logger.debug(event)
-                self.o_pub.data = make_event(event, False)
+                self.o.data = make_event(event, False)
                 self._pomdp_status = "solving"
 
             # When the cued task ends, start POMDP solving
@@ -545,7 +545,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
             ):
                 event = "POMDP start solving"
                 self.logger.debug(event)
-                self.o_pub.data = make_event(event, False)
+                self.o.data = make_event(event, False)
 
                 # Make and regularize confusion matrix
                 pomdp_cm = self._make_conf_matrix()
@@ -562,7 +562,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                 self._pomdp_status = "solved"
 
         # Make sure we have data to work with
-        if not self.i_clf.ready():
+        if not self.i_clf_clf.ready():
             return
 
         # Get an iterator over epochs, if any
@@ -579,7 +579,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
 
             # Check if the model is fitted and forward the event
             if row.label == "ready":
-                self.o_pub.data = make_event("ready", False)
+                self.o.data = make_event("ready", False)
                 return
 
             # Check probabilities
