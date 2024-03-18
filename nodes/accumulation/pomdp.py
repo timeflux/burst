@@ -50,13 +50,14 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         self._timeout = timeout,
         self._memory = memory,
         self._precision = precision,
-
+        self._finite_horizon = False
         self._problem = None
         self._policy = None
         self._pomdp_status = None
         self._current_cue = None
         self._pomdp_preds = []
         self._pomdp_trues = []
+        self._init_belief = None
 
     def _normalize_conf_matrix(self, conf_matrix):
         """Normalize confusion matrix by mixing it with the uniform distribution [1]"""
@@ -103,10 +104,10 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         init_true_state = random.choice(all_init_states)
 
         # Get initial belief (uniform across initial states)
-        init_belief = self._get_init_belief(all_states, all_init_states)
+        self._init_belief = self._get_init_belief(all_states, all_init_states)
 
         self._problem = BaseProblem(
-            init_belief,
+            self._init_belief,
             init_true_state,
             n_targets=len(self.codes),
             conf_matrix=conf_matrix,
@@ -145,7 +146,8 @@ class AccumulationPOMDP(AccumulationSteadyPred):
 
                 # Get action and max belief when action is taken
                 action = self._policy.plan(self._problem.agent)
-                max_b = cur_belief[cur_belief.mpe()]
+                cur_candidate = cur_belief.mpe()
+                max_b = cur_belief[cur_candidate]
 
                 # Get observation
                 observation = BCIObservation(pomdp_target)
@@ -161,8 +163,18 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                 )
                 self._problem.agent.set_belief(new_belief)
 
+                if self.finite_horizon and self._frames >= self._max_frames_pred:
+                    self.logger.debug("Action: No Action.\t Trial maximum reached")
+                    meta = {
+                        "timestamp": timestamp,
+                        "target": 0,
+                        "Best candidate": cur_candidate.id,
+                        "Score": max_b,
+                        "frames": self._frames,
+                    }
+
                 # If no prediction is done, print and continue
-                if action.name == "a_wait":
+                elif action.name == "a_wait":
                     self.logger.debug(f"Action: {action}\t Observation: {pomdp_target}")
                 else:
                     meta = {
@@ -175,10 +187,11 @@ class AccumulationPOMDP(AccumulationSteadyPred):
             else:  # self._pomdp_status == 'solving'
                 self._pomdp_preds.append(pomdp_target)
                 self._pomdp_trues.append(self._current_cue)
+                self._pomdp_pred_n += 1
                 self.logger.debug(
                     f"POMDP prediction: {pomdp_target}\tTrue label: {self._current_cue}"
-                    f"\tFrame: {self._frames}\tUsed {len(pomdp_probas)} probas and "
-                    f"{len(pomdp_indices)} indices"
+                    f"\tFrame: {self._frames}\tPOMDP pred number: {self._pomdp_pred_n}"
+                    f"\tUsed {len(pomdp_probas)} probas and {len(pomdp_indices)} indices"
                 )
 
         if self._pomdp_status != "solved":  # Used before and during POMDP accumulation
@@ -337,3 +350,9 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                     )
 
                 self.decision(timestamp)
+    def reset(self):
+        AccumulationSteadyPred.reset(self)
+        self._pomdp_pred_n = 0
+        # Reinitialize belief for finite-horizon problem
+        if self.finite_horizon:
+            self.agent.set_belief(self._init_belief)
