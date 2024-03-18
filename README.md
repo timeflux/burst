@@ -50,12 +50,64 @@ Currently, only the `riemann` machine learning pipeline is available.
 
 | Setting | Description  | Default |
 |---------|--------------|---------|
-| DEVICE | EEG device | dummy |
-| EPOCH | Epoch length, in seconds, used for classification | 0.25 |
-| PIPELINE | Classification pipeline (riemann, eegnet) | riemann |
-| CALIBRATION_LAYOUT | The layout used for calibration (single, simple, grid, keyboard) | single |
-| TASK_LAYOUT | The layout used for the main task (simple, grid, keyboard) | simple |
-| SEED | If set, the code generator will use this random seed for reproducibility purposes | |
+| EXIT_ON_BAD_PARAMETER                         | Wether Timeflux should crash on a bad parameter value                     | true                              |
+| DEVICE                                        | EEG device                                                                | dummy                             |
+| EPOCH                                         | Epoch length, in seconds                                                  | 0.20                              |
+| PIPELINE                                      | Classification pipeline (riemann, eegnet)                                 | riemann                           |
+| CODE_FILE                                     | A numpy file containing the flicker codes                                 | "./codes/example5.npy"            |
+| NUMBER_OF_CLASSES                             | Number of flickers to display                                             | 5                                 |
+| SEED                                          | Seed to control reproducibility                                           | 1706806480567776200               |
+| CHANNELS                                      | The list of comma separated electrode names                               | PO7,O1,Oz,O2,PO8,PO3,POz,PO4      |
+| REREF_CHANNEL                                 | The electrode used for the rereferencing. Must be included in CHANNELS    | POz                               |
+| EEG_LSL_STREAM_NAME                           | The name of the EEG LSL stream                                            | LSLOutletStreamName-EEG           |
+| STIM_TYPE                                     | Flicker patches type : ricker or gabor                                    | ricker                            |
+| STIM_DEPTH                                    | Flicker amplitude depth (max opacity)                                     | 0.7                               |
+| UI_BACKGROUND                                 | Screen background color                                                   | 202020                            |
+| UI_TEXT_COLOR                                 | Within flickering zone text color                                         | FFFFFF                            |
+| UI_CROSS_COLOR                                | Within flickering zone fixation cross color                               | FFFFFF                            |
+| UI_TARGET_OFF_COLOR                           | Flicker background off color (not screen)                                 | 797979                            |
+| UI_TARGET_ON_COLOR                            | Flicker background on color                                               | FFFFFF                            |
+| UI_TARGET_BORDER_COLOR                        | Flicker's border color                                                    | 000000                            |
+| UI_TARGET_CUE_COLOR                           | Flicker's border color when cued                                          | 0000FF                            |
+| UI_TARGET_SUCCESS_COLOR                       | Flicker's background color on successful cued prediction                  | 00FF00                            |
+| UI_TARGET_FAILURE_COLOR                       | Flicker's background color on failed cued prediction                      | FF0000                            |
+| UI_TARGET_LOCK_COLOR                          | Flicker's background color on prediction (not cued)                       | 0000FF                            |
+| CALIBRATION_LAYOUT                            | Calibration layout (single, simple, grid, keyboard)                       | simple                            |
+| CALIBRATION_BLOCKS                            | Number of calibration trials                                              | 10                                |
+| CALIBRATION_STIM_REP                          | Number of repetition of a code for a single trial                         | 3                                 |
+| CALIBRATION_DURATION_REST                     | Rest duration between two calibration trials, in milliseconds             | 2000                              |
+| CALIBRATION_DURATION_CUE_ON                   | Cue on state duration, in milliseconds                                    | 1500                              |
+| CALIBRATION_DURATION_CUE_OFF                  | Duration between cue off state and start of flickering, in milliseconds   | 500                               |
+| POMDP_STEP                                    |                                                                           | 6                                 |
+| POMDP_NORM_VALUE                              |                                                                           | 0.3                               |
+| POMDP_HIT_REWARD                              |                                                                           | 10                                |
+| POMDP_MISS_COST                               |                                                                           | -100                              |
+| POMDP_WAIT_COST                               |                                                                           | -1                                |
+| POMDP_SOLVER_PATH                             | Path of the SARSOP POMDP solver                                           |                                   |
+| POMDP_DISCOUNT_FACTOR                         |                                                                           | 0.8                               |
+| POMDP_TIMEOUT                                 |                                                                           | 30                                |
+| POMDP_MEMORY                                  |                                                                           | 4096                              |
+| POMDP_PRECISION                               |                                                                           | 0.001                             |
+| TASK_LAYOUT                                   | Task layout (simple, grid, keyboard)                                      | simple                            |
+| TASK_DURATION_REST                            | Rest duration between end of trial and start of the next cue              | 2000                              |
+| TASK_DURATION_LOCK_ON                         | Duration of the activation feedback on the flicker                        | 1500                              |
+| TASK_DURATION_LOCK_OFF                        | Duration between the end of the feedback and the start of the flickering  | 500                               |
+| CUED_TASK_ENABLE                              | Enable the cued task, for accuracy evaluation                             | true                              |
+| CUED_TASK_TARGET_REP                          | Number of trials for the cued task                                        | 20                                |
+| PINPAD_ENABLE_TASK                            | Enables the pin pad task (true to enable)                                 | true                              |
+| PINPAD_SEQUENCES                              | Number of pin pad codes to crack                                          | 5                                 |
+| PINPAD_CUE_TARGET                             | Cue the expected target to help the user                                  | false                             |
+| PINPAD_CUE_FEEDBACK                           | Display a feedback to the use ron correct activation                      | true                              |
+| MIN_BUFFER_LENGTH                             | The minimum size of the data buffer before doing any prediction           | 60                                |
+| MAX_BUFFER_LENGTH                             | The maximum size of the data buffer before acting as a sliding            | 80                                |
+|                                               |         deleting as much data at the start than it adds at the end)       |                                   |
+| MIN_PRED_LENGTH                               | The minimum number of consecutive frame prediction before outputting      | 50                                |
+|                                               | a final prediction                                                        |                                   |
+| MAX_PRED_LENGTH=200                           | The maximum number of frame prediction after which a prediciton is        | 200                               |
+|                                               | forcefully output based on a majority voting among the predictions        |                                   |
+| TIMEFLUX_HOOK_PRE                             | Validate data                                                             | hooks.pre                         |
+| TIMEFLUX_LOG_FILE                             | Log path                                                                  | log/%Y%m%d-%H%I%S.log             |
+| RECORD_DATA                                   | Allow the recording of data passing through time flux                     | false                             |
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
 
