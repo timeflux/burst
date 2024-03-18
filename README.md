@@ -88,7 +88,7 @@ Currently, only the `riemann` machine learning pipeline is available.
 | POMDP_TIMEOUT                                 | Maximum time to let SARSOP compute the approximated optimal policy for POMDP                                                               | 30                                |
 | POMDP_MEMORY                                  | Memory allocation for SARSOP policy approximation                                                                                          | 4096                              |
 | POMDP_PRECISION                               | Desired precision (i.e. epsilon) for approximated optimal policy                                                                           | 0.001                             |
-| TASK_LAYOUT                                   | Task layout (simple, grid, keyboard)                                                                                                       | simple                            |
+| TASK_LAYOUT                                   | Task layout (simple, grid, keyboard)                                      | simple                            |
 | TASK_DURATION_REST                            | Rest duration between end of trial and start of the next cue              | 2000                              |
 | TASK_DURATION_LOCK_ON                         | Duration of the activation feedback on the flicker                        | 1500                              |
 | TASK_DURATION_LOCK_OFF                        | Duration between the end of the feedback and the start of the flickering  | 500                               |
