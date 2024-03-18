@@ -46,7 +46,7 @@ graphs:
             solver: lsqr
             shrinkage: auto
   - id: predict
-    module: nodes.accumulation
+    module: nodes.accumulation.simple
     class: AccumulationSteadyPred
     params:
       codes:
