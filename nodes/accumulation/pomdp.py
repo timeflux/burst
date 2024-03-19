@@ -10,6 +10,7 @@ from bci_pomdp.problem import BaseProblem
 from bci_pomdp.domain import BCIObservation, BCIState
 from sklearn.metrics import confusion_matrix
 
+
 class AccumulationPOMDP(AccumulationSteadyPred):
     def __init__(
         self,
@@ -30,6 +31,25 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         precision=0.001,
         recovery=300,
     ):
+        self._pomdp_step = pomdp_step
+        self._norm_value = norm_value
+        self._hit_reward = hit_reward
+        self._miss_cost = miss_cost
+        self._wait_cost = wait_cost
+        self._solver_path = solver_path
+        self._discount_factor = (discount_factor,)
+        self._timeout = (timeout,)
+        self._memory = (memory,)
+        self._precision = (precision,)
+        self._finite_horizon = False
+        self._problem = None
+        self._policy = None
+        self._pomdp_status = None
+        self._current_cue = None
+        self._pomdp_preds = []
+        self._pomdp_trues = []
+        self._init_belief = None
+
         AccumulationSteadyPred.__init__(
             self,
             codes,
@@ -39,25 +59,6 @@ class AccumulationPOMDP(AccumulationSteadyPred):
             max_frames_pred,
             recovery,
         )
-
-        self._pomdp_step = pomdp_step
-        self._norm_value = norm_value
-        self._hit_reward = hit_reward
-        self._miss_cost = miss_cost
-        self._wait_cost = wait_cost
-        self._solver_path = solver_path
-        self._discount_factor = discount_factor,
-        self._timeout = timeout,
-        self._memory = memory,
-        self._precision = precision,
-        self._finite_horizon = False
-        self._problem = None
-        self._policy = None
-        self._pomdp_status = None
-        self._current_cue = None
-        self._pomdp_preds = []
-        self._pomdp_trues = []
-        self._init_belief = None
 
     def _normalize_conf_matrix(self, conf_matrix):
         """Normalize confusion matrix by mixing it with the uniform distribution [1]"""
@@ -350,9 +351,10 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                     )
 
                 self.decision(timestamp)
+
     def reset(self):
         AccumulationSteadyPred.reset(self)
         self._pomdp_pred_n = 0
         # Reinitialize belief for finite-horizon problem
-        if self.finite_horizon:
+        if self._finite_horizon:
             self.agent.set_belief(self._init_belief)
