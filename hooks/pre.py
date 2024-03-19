@@ -452,10 +452,12 @@ if int(os.environ["MAX_PRED_LENGTH"]) < int(os.environ["MIN_BUFFER_LENGTH"]):
     )
 
 # Cued task sequence
-if check_boolean(os.environ["CUED_TASK_SEQUENCE_ENABLE"]):
-    os.environ["CUED_TASK_SEQUENCE"] = cued_task_sequence(
-        os.environ["NUMBER_OF_CLASSES"], os.environ["CUED_TASK_SEQUENCE_REP"]
+if os.environ["CUED_TASK_SEQUENCE_ENABLE"]:
+    stim_sequence = cued_task_sequence(
+        int(os.environ["NUMBER_OF_CLASSES"]), int(os.environ["CUED_TASK_SEQUENCE_REP"])
     )
+    logger.debug(f"Using sequence {stim_sequence} for the cued task")
+    os.environ["CUED_TASK_TARGET_REP"] = str(stim_sequence)
 
 # Timeflux
 os.environ["RECORD_DATA"] = os.getenv("RECORD_DATA")
