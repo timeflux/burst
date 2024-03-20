@@ -459,6 +459,57 @@ if os.environ["CUED_TASK_SEQUENCE_ENABLE"]:
     logger.debug(f"Using sequence {stim_sequence} for the cued task")
     os.environ["CUED_TASK_TARGET_REP"] = str(stim_sequence)
 
+# POMDP parameters
+os.environ["POMDP_STEP"] = os.getenv("POMDP_STEP")
+if not check_int("POMDP_STEP") or int(os.environ["POMDP_STEP"]) <= 0:
+    error_handling("POMDP_STEP", "POMDP_STEP must be a strictly positive integer", 10)
+os.environ["POMDP_NORM_VALUE"] = os.getenv("POMDP_NORM_VALUE")
+if not check_float("POMDP_NORM_VALUE") or float(os.environ["POMDP_NORM_VALUE"]) >= 1.0:
+    error_handling(
+        "POMDP_NORM_VALUE", "POMDP_NORM_VALUE must be a float between 0 and 1", 0.3
+    )
+os.environ["POMDP_HIT_REWARD"] = os.getenv("POMDP_HIT_REWARD")
+if not check_int("POMDP_HIT_REWARD") or int(os.environ["POMDP_HIT_REWARD"]) <= 0:
+    error_handling(
+        "POMDP_HIT_REWARD", "POMDP_HIT_REWARD must be a structly positive integer", 10
+    )
+os.environ["POMDP_MISS_COST"] = os.getenv("POMDP_MISS_COST")
+if not check_int("POMDP_MISS_COST") or int(os.environ["POMDP_MISS_COST"]) >= 0:
+    error_handling(
+        "POMDP_MISS_COST", "POMDP_MISS_COST must be a strictly negative integer", -100
+    )
+os.environ["POMDP_WAIT_COST"] = os.getenv("POMDP_WAIT_COST")
+if not check_int("POMDP_WAIT_COST") or int(os.environ["POMDP_WAIT_COST"]) >= 0:
+    error_handling(
+        "POMDP_WAIT_COST", "POMDP_WAIT_COST must be a strictly negative integer", -1
+    )
+os.environ["POMDP_SOLVER_PATH"] = os.getenv("POMDP_SOLVER_PATH")
+os.environ["POMDP_DISCOUNT_FACTOR"] = os.getenv("POMDP_DISCOUNT_FACTOR")
+if (
+    not check_float("POMDP_DISCOUNT_FACTOR")
+    or float(os.environ["POMDP_DISCOUNT_FACTOR"]) >= 1.0
+):
+    error_handling(
+        "POMDP_DISCOUNT_FACTOR",
+        "POMDP_DISCOUNT_FACTOR must be a float between 0 and 1",
+        0.8,
+    )
+os.environ["POMDP_TIMEOUT"] = os.getenv("POMDP_TIMEOUT")
+if not check_int("POMDP_TIMEOUT") or int(os.environ["POMDP_TIMEOUT"]) <= 0:
+    error_handling(
+        "POMDP_TIMEOUT", "POMDP_TIMEOUT must be a strictly positive integer", 180
+    )
+os.environ["POMDP_MEMORY"] = os.getenv("POMDP_MEMORY")
+if not check_int("POMDP_MEMORY") or int(os.environ["POMDP_MEMORY"]) <= 0:
+    error_handling(
+        "POMDP_MEMORY", "POMDP_MEMORY must be a strictly positive integer", 4098
+    )
+os.environ["POMDP_PRECISION"] = os.getenv("POMDP_PRECISION")
+if not check_float("POMDP_PRECISION") or float(os.environ["POMDP_PRECISION"]) >= 1.0:
+    error_handling(
+        "POMDP_PRECISION", "POMDP_PRECISION must be a float between 0 and 1", 0.001
+    )
+
 # Timeflux
 os.environ["RECORD_DATA"] = os.getenv("RECORD_DATA")
 if not check_boolean("RECORD_DATA"):
