@@ -57,6 +57,19 @@ graphs:
       max_buffer_size: {{MAX_BUFFER_LENGTH}}
       min_frames_pred: {{MIN_PRED_LENGTH}}
       max_frames_pred: {{MAX_PRED_LENGTH}}
+      pomdp_step: {{POMDP_STEP}}
+      norm_value: {{NORM_VALUE}}
+      hit_reward: {{HIT_REWARD}}
+      miss_cost: {{MISS_COST}}
+      wait_cost: {{WAIT_COST}}
+      solver_path: {{SOLVER_PATH}}
+      discount_factor: {{DISCOUNT_FACTOR}}
+      timeout: {{TIMEOUT}}
+      memory: {{MEMORY}}
+      precision: {{PRECISION}}
+      recovery: {{RECOVERY}}
+
+      
   - id: pub
     module: timeflux.nodes.zmq
     class: Pub
