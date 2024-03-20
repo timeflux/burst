@@ -94,9 +94,9 @@ graphs:
                 cue_target: {{ PINPAD_CUE_TARGET }}
                 cue_feedback: {{ PINPAD_CUE_FEEDBACK }}
             run:
-              duration_rest: 2000
-              duration_lock_on: 1500
-              duration_lock_off: 500
+              duration_rest: {{ TASK_DURATION_REST }}
+              duration_lock_on: {{ TASK_DURATION_LOCK_ON }}
+              duration_lock_off: {{ TASK_DURATION_LOCK_OFF }}
             colors:
               background: "#{{ UI_BACKGROUND }}"
               text: "#{{ UI_TEXT_COLOR }}"
