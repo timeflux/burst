@@ -48,8 +48,8 @@ By default, a random signal is used in place of EEG data, so you can try the app
 
 Currently, only the `riemann` machine learning pipeline is available.
 
-| Setting | Description  | Default |
-|---------|--------------|---------|
+| Setting                                       | Description                                                               | Default                           |
+|---------                                      |--------------                                                             |---------                          |
 | EXIT_ON_BAD_PARAMETER                         | Wether Timeflux should crash on a bad parameter value                     | true                              |
 | DEVICE                                        | EEG device                                                                | dummy                             |
 | EPOCH                                         | Epoch length, in seconds                                                  | 0.20                              |
@@ -78,16 +78,16 @@ Currently, only the `riemann` machine learning pipeline is available.
 | CALIBRATION_DURATION_REST                     | Rest duration between two calibration trials, in milliseconds             | 2000                              |
 | CALIBRATION_DURATION_CUE_ON                   | Cue on state duration, in milliseconds                                    | 1500                              |
 | CALIBRATION_DURATION_CUE_OFF                  | Duration between cue off state and start of flickering, in milliseconds   | 500                               |
-| POMDP_STEP                                    |                                                                           | 6                                 |
-| POMDP_NORM_VALUE                              |                                                                           | 0.3                               |
-| POMDP_HIT_REWARD                              |                                                                           | 10                                |
-| POMDP_MISS_COST                               |                                                                           | -100                              |
-| POMDP_WAIT_COST                               |                                                                           | -1                                |
-| POMDP_SOLVER_PATH                             | Path of the SARSOP POMDP solver                                           |                                   |
-| POMDP_DISCOUNT_FACTOR                         |                                                                           | 0.8                               |
-| POMDP_TIMEOUT                                 |                                                                           | 30                                |
-| POMDP_MEMORY                                  |                                                                           | 4096                              |
-| POMDP_PRECISION                               |                                                                           | 0.001                             |
+| POMDP_STEP                                    | Number of frames between POMDP decission steps                                                                                             | 6                                 |
+| POMDP_NORM_VALUE                              | Parameter used to normalize the POMDP's confusion matrix                                                                                   | 0.3                               |
+| POMDP_HIT_REWARD                              | Reward for POMDP correct decision                                                                                                          | 10                                |
+| POMDP_MISS_COST                               | Negative reward for POMDP incorrect decision                                                                                               | -100                              |
+| POMDP_WAIT_COST                               | Negative reward for POMDP's information collection (i.e. 'wait') action                                                                    | -1                                |
+| POMDP_SOLVER_PATH                             | Path of the SARSOP POMDP solver                                                                                                            |                                   |
+| POMDP_DISCOUNT_FACTOR                         | Gamma parameter used in the POMDP's value function                                                                                         | 0.8                               |
+| POMDP_TIMEOUT                                 | Maximum time to let SARSOP compute the approximated optimal policy for POMDP                                                               | 30                                |
+| POMDP_MEMORY                                  | Memory allocation for SARSOP policy approximation                                                                                          | 4096                              |
+| POMDP_PRECISION                               | Desired precision (i.e. epsilon) for approximated optimal policy                                                                           | 0.001                             |
 | TASK_LAYOUT                                   | Task layout (simple, grid, keyboard)                                      | simple                            |
 | TASK_DURATION_REST                            | Rest duration between end of trial and start of the next cue              | 2000                              |
 | TASK_DURATION_LOCK_ON                         | Duration of the activation feedback on the flicker                        | 1500                              |
@@ -131,39 +131,39 @@ Individual epochs are scaled using the standard deviation of the training set. C
 
 The application expects an dictionary of settings.
 
-| Setting | Description  | Default |
-|---------|--------------|---------|
-| codes.calibration | The list of burst codes for the calibration layout (one per target) | |
-| codes.task | The list of burst codes for the task layout (one per target) | |
-| layouts.calibration | The layout for the calibration stage ('single', 'simple', 'keyboard') | single |
-| layouts.task | The layout for the task stages ('simple', 'keyboard') | keyboard |
-| calibration.blocks | The number of rounds during calibration | 5 |
-| calibration.repetitions | The number of cycles for each target | 3 |
-| calibration.active_only | Display only the current target and mask the others | `false` |
-| calibration.duration_rest | The rest period before a new target is presented, in ms | 2000 |
-| calibration.duration_cue_on | The duration of the cue | 1500 |
-| calibration.duration_cue_off | The duration of the pause before the code starts flashing | 500 |
-| task.cue.enable | `true` if the cued task must be enabled, `false` otherwise | `true` |
-| task.cue.targets | The number of random targets or the list of targets to be cued | 10 |
-| task.sequence.enable | `true` if the sequence task must be enabled, `false` otherwise | `true` |
-| task.sequence.sequences | The number of random sequences or the list of sequences to be typed | 10 |
-| task.sequence.cue_target | `true` if target cues must be enabled, `false` otherwise | `false` |
-| task.sequence.cue_feedback | `true` if feedback cues must be enabled, `false` otherwise | `true` |
-| run.duration_rest | The rest period before the free run begins, in ms | 2000 |
-| run.duration_lock_on | The duration of the feedback when a prediction is received | 1500 |
-| run.duration_lock_off | The rest period after the feedback | 500 |
-| stim.type | The stimulus type ('gabord', 'ricker', 'face', 'plain') | gabor |
-| stim.depth | The stimulus opacity (between 0 and 1) | 0.8 |
-| colors.background | The background color | #202020 |
-| colors.text | The text color | #FFFFFF |
-| colors.cross | The fixation cross color | #FFFFFF |
-| colors.target_off | The target color during the off-state | #797979 |
-| colors.target_on | The target color during the on-state, if stim.type is 'plain' | #FFFFFF |
-| colors.target_border | The border color | #000000 |
-| colors.target_cue | The cue border color | blue |
-| colors.target_success | The target color when the task is successful | green |
-| colors.target_failure | The target color when the task failed | red |
-| colors.target_lock | The prediction color | blue |
+| Setting                      | Description                                                           | Default  |
+|---------                     |--------------                                                         |--------- |
+| codes.calibration            | The list of burst codes for the calibration layout (one per target)   |          |
+| codes.task                   | The list of burst codes for the task layout (one per target)          |          |
+| layouts.calibration          | The layout for the calibration stage ('single', 'simple', 'keyboard') | single   |
+| layouts.task                 | The layout for the task stages ('simple', 'keyboard')                 | keyboard |
+| calibration.blocks           | The number of rounds during calibration                               | 5        |
+| calibration.repetitions      | The number of cycles for each target                                  | 3        |
+| calibration.active_only      | Display only the current target and mask the others                   | `false`  |
+| calibration.duration_rest    | The rest period before a new target is presented, in ms               | 2000     |
+| calibration.duration_cue_on  | The duration of the cue                                               | 1500     |
+| calibration.duration_cue_off | The duration of the pause before the code starts flashing             | 500      |
+| task.cue.enable              | `true` if the cued task must be enabled, `false` otherwise            | `true`   |
+| task.cue.targets             | The number of random targets or the list of targets to be cued        | 10       |
+| task.sequence.enable         | `true` if the sequence task must be enabled, `false` otherwise        | `true`   |
+| task.sequence.sequences      | The number of random sequences or the list of sequences to be typed   | 10       |
+| task.sequence.cue_target     | `true` if target cues must be enabled, `false` otherwise              | `false`  |
+| task.sequence.cue_feedback   | `true` if feedback cues must be enabled, `false` otherwise            | `true`   |
+| run.duration_rest            | The rest period before the free run begins, in ms                     | 2000     |
+| run.duration_lock_on         | The duration of the feedback when a prediction is received            | 1500     |
+| run.duration_lock_off        | The rest period after the feedback                                    | 500      |
+| stim.type                    | The stimulus type ('gabord', 'ricker', 'face', 'plain')               | gabor    |
+| stim.depth                   | The stimulus opacity (between 0 and 1)                                | 0.8      |
+| colors.background            | The background color                                                  | #202020  |
+| colors.text                  | The text color                                                        | #FFFFFF  |
+| colors.cross                 | The fixation cross color                                              | #FFFFFF  |
+| colors.target_off            | The target color during the off-state                                 | #797979  |
+| colors.target_on             | The target color during the on-state, if stim.type is 'plain'         | #FFFFFF  |
+| colors.target_border         | The border color                                                      | #000000  |
+| colors.target_cue            | The cue border color                                                  | blue     |
+| colors.target_success        | The target color when the task is successful                          | green    |
+| colors.target_failure        | The target color when the task failed                                 | red      |
+| colors.target_lock           | The prediction color                                                  | blue     |
 
 The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. Also see [`app.js`](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
 

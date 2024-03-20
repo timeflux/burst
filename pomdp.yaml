@@ -1,6 +1,6 @@
 import:
   - graphs/{{DEVICE}}.yaml
-  - graphs/classification.yaml
+  - graphs/pomdp_classification.yaml
   {% if RECORD_DATA == 'true' %}
   - graphs/record.yaml
   {% endif %}
