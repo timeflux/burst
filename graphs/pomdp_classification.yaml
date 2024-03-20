@@ -58,17 +58,14 @@ graphs:
       min_frames_pred: {{MIN_PRED_LENGTH}}
       max_frames_pred: {{MAX_PRED_LENGTH}}
       pomdp_step: {{POMDP_STEP}}
-      norm_value: {{NORM_VALUE}}
-      hit_reward: {{HIT_REWARD}}
-      miss_cost: {{MISS_COST}}
-      wait_cost: {{WAIT_COST}}
-      solver_path: {{SOLVER_PATH}}
-      discount_factor: {{DISCOUNT_FACTOR}}
-      timeout: {{TIMEOUT}}
-      memory: {{MEMORY}}
-      precision: {{PRECISION}}
-      recovery: {{RECOVERY}}
-
+      norm_value: {{POMDP_NORM_VALUE}}
+      hit_reward: {{POMDP_HIT_REWARD}}
+      wait_cost: {{POMDP_WAIT_COST}}
+      solver_path: {{POMDP_SOLVER_PATH}}
+      discount_factor: {{POMDP_DISCOUNT_FACTOR}}
+      timeout: {{POMDP_TIMEOUT}}
+      memory: {{POMDP_MEMORY}}
+      precision: {{POMDP_PRECISION}}
       
   - id: pub
     module: timeflux.nodes.zmq
