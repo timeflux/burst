@@ -487,47 +487,60 @@ class Burst {
                 let event = await flag('predict');
                 let predicted = event.detail.target;
                 let frames = event.detail.frames;
-                this.running = false;
-                this._reset();
-
-                // Add to history
-                preds.push(predicted);
 
                 // Did we get it right?
-                let hit = predicted == expected;
-
-                // Get next expected target
-                if (hit) {
-                    target++;
-                    expected = sequence[target];
-                }
-
-                // Update the feedback
-                reset_class('#sequence span');
-                for (let i = 0; i < sequence.length; i++) {
-                    let element = `#sequence :nth-child(${i + 1})`;
-                    if (i == target) {
-                        set_class(element, 'active');
-                    } else if (i < target) {
-                        set_class(element, 'success');
+                if (predicted == -1){
+                    reset_class('#sequence span');
+                    for (let i = 0; i < sequence.length; i++) {
+                        toggle(this.targets[expected].element, 'cue');
                     }
+                    await sleep(200);
+                    for (let i = 0; i < sequence.length; i++) {
+                        toggle(this.targets[expected].element, 'cue');
+                    }
+                    this.sequence.reset();
+                }else{
+                    this.running = false;
+                    this._reset();
+
+                    // Add to history
+                    preds.push(predicted);
+
+                    let hit = predicted == expected;
+
+                    // Get next expected target
+                    if (hit) {
+                        target++;
+                        expected = sequence[target];
+                    }
+
+                    // Update the feedback
+                    reset_class('#sequence span');
+                    for (let i = 0; i < sequence.length; i++) {
+                        let element = `#sequence :nth-child(${i + 1})`;
+                        if (i == target) {
+                            set_class(element, 'active');
+                        } else if (i < target) {
+                            set_class(element, 'success');
+                        }
+                    }
+
+                    // Cue
+                    let color = 'lock';
+                    if (this.options.task.sequence.cue_feedback) {
+                        color = hit ? 'success' : 'failure';
+                    }
+                    toggle(this.targets[predicted].element, color);
+                    await sleep(this.options.run.duration_lock_on);
+                    toggle(this.targets[predicted].element, color);
+                    await sleep(this.options.run.duration_lock_off);
+
+                    // Update score
+                    this.score.trial(hit, frames);
+
+                    // Full match
+                    if (expected === undefined) break;
                 }
-
-                // Cue
-                let color = 'lock';
-                if (this.options.task.sequence.cue_feedback) {
-                    color = hit ? 'success' : 'failure';
-                }
-                toggle(this.targets[predicted].element, color);
-                await sleep(this.options.run.duration_lock_on);
-                toggle(this.targets[predicted].element, color);
-                await sleep(this.options.run.duration_lock_off);
-
-                // Update score
-                this.score.trial(hit, frames);
-
-                // Full match
-                if (expected === undefined) break;
 
             }
 
