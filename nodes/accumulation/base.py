@@ -107,11 +107,11 @@ class AbstractAccumulation(Node):
                     self._indices.pop(0)
                 if len(self._probas) < self.min_buffer_size:
                     continue
-                self.logger.debug(f"RC: {''.join(list(map(str, self._probas)))}")
-                for cnt, c in enumerate(self.codes):
-                    self.logger.debug(
-                        f"C{cnt}: {''.join(list(map(str, c[:len(self._probas)])))}"
-                    )
+                # self.logger.debug(f"RC: {''.join(list(map(str, self._probas)))}")
+                # for cnt, c in enumerate(self.codes):
+                #     self.logger.debug(
+                #         f"C{cnt}: {''.join(list(map(str, c[:len(self._probas)])))}"
+                #     )
 
                 self.decision(timestamp)
 
