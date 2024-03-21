@@ -66,6 +66,7 @@ graphs:
       timeout: {{POMDP_TIMEOUT}}
       memory: {{POMDP_MEMORY}}
       precision: {{POMDP_PRECISION}}
+      finite_horizon: {{POMDP_FINITE_HORIZON}}
       
   - id: pub
     module: timeflux.nodes.zmq

@@ -30,6 +30,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         timeout=30,
         memory=4096,
         precision=0.001,
+        finite_horizon=False,
     ):
         self._pomdp_step = pomdp_step
         self._norm_value = norm_value
@@ -41,7 +42,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         self._timeout = timeout
         self._memory = memory
         self._precision = precision
-        self._finite_horizon = False
+        self._finite_horizon = finite_horizon
         self._problem = None
         self._policy = None
         self._pomdp_status = None
@@ -168,7 +169,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                     self.logger.debug("Action: No Action.\t Trial maximum reached")
                     meta = {
                         "timestamp": timestamp,
-                        "target": 0,
+                        "target": -1,
                         "Best candidate": cur_candidate.id,
                         "Score": max_b,
                         "frames": self._frames,
@@ -356,5 +357,5 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         AccumulationSteadyPred.reset(self)
         self._pomdp_pred_n = 0
         # Reinitialize belief for finite-horizon problem
-        if self._finite_horizon:
-            self.agent.set_belief(self._init_belief)
+        if self._finite_horizon and self._problem:
+            self._problem.agent.set_belief(self._init_belief)
