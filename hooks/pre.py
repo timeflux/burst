@@ -509,6 +509,13 @@ if not check_float("POMDP_PRECISION") or float(os.environ["POMDP_PRECISION"]) >=
     error_handling(
         "POMDP_PRECISION", "POMDP_PRECISION must be a float between 0 and 1", 0.001
     )
+os.environ["POMDP_FINITE_HORIZON"] = os.getenv("POMDP_FINITE_HORIZON")
+if not check_boolean("POMDP_FINITE_HORIZON"):
+    error_handling(
+        "POMDP_FINITE_HORIZON",
+        "POMDP_FINITE_HORIZON must be a boolean (true/false)",
+        False,
+    )
 
 # Timeflux
 os.environ["RECORD_DATA"] = os.getenv("RECORD_DATA")
