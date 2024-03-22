@@ -62,6 +62,26 @@ class AccumulationPOMDP(AccumulationSteadyPred):
             recovery,
         )
 
+    def print_belief(self, cur_belief, indent=0):
+        """
+        Print agent's current belief in a readable manner
+
+        Parameters
+        ----------
+        cur_belief: pomdp_py 'Particles' or 'Histogram'
+            Current belief of the agent. The full class signatures are:
+                - Particles: pomdp_py.representations.distribution.particles.Particles
+                - Histogram: pomdp_py.representations.distribution.histogram.Histogram
+
+        indent: int, default=0
+            Number of whitespaces to add before each printed line. Used for
+            consistency with surrounding prints.
+        """
+        for state in cur_belief:
+            b = cur_belief[state]
+            if b:  # Particles representation is sparse, we omit zero values
+                self.logger.debug(" " * indent + str(state) + " -> " + str(b))
+
     def _normalize_conf_matrix(self, conf_matrix):
         """Normalize confusion matrix by mixing it with the uniform distribution [1]"""
         copy_matrix = conf_matrix.copy()
@@ -83,8 +103,10 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         return norm_conf_matrix
 
     def _get_pomdp_steps(self):
+        # We add 2 in order to count the first step + include an extra step where the POMDP
+        # can decide based on the last prediction before going to the terminal state
         pomdp_steps = (
-            int((self._max_frames_pred - self.min_buffer_size) / self._pomdp_step) + 1
+            int((self._max_frames_pred - self.min_buffer_size) / self._pomdp_step) + 2
         )
 
         return pomdp_steps
@@ -183,7 +205,7 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                 # Print current belief
                 cur_belief = self._problem.agent.cur_belief
                 self.logger.debug(f"Current belief at frame {self._frames}:")
-                self.logger.debug(cur_belief)
+                self.print_belief(cur_belief, indent=4)
 
                 # Get action and max belief when action is taken
                 action = self._policy.plan(self._problem.agent)
@@ -192,6 +214,46 @@ class AccumulationPOMDP(AccumulationSteadyPred):
 
                 # Get observation
                 observation = BCIObservation(pomdp_target)
+
+                # Check if trial ended (finite-horizon)
+                if self._finite_horizon and self._frames > self._max_frames_pred:
+                    observation = BCIObservation("term")
+
+                    if action.name == "a_wait":  # No action
+                        self.logger.debug("Action: No Action.\t Trial maximum reached")
+                        meta = {
+                            "timestamp": timestamp,
+                            "target": -1,
+                            "Best candidate": cur_candidate.id,
+                            "Score": max_b,
+                            "frames": self._frames,
+                        }
+                    else:
+                        meta = {
+                            "timestamp": timestamp,
+                            "target": action.id,
+                            "score": max_b,
+                            "frames": self._frames,
+                        }
+                else:  # Inifinite horizon or trial has not ended
+
+                    if action.name == "a_wait":
+                        observation = BCIObservation(pomdp_target)
+                        self.logger.debug(
+                            f"Action: {action}\t Observation: {observation}"
+                        )
+                    else:
+                        if self._finite_horizon:
+                            observation = BCIObservation("term")
+                        else:
+                            observation = BCIObservation(pomdp_target)
+
+                        meta = {
+                            "timestamp": timestamp,
+                            "target": action.id,
+                            "score": max_b,
+                            "frames": self._frames,
+                        }
 
                 # Update belief
                 new_belief = pomdp_py.update_histogram_belief(
@@ -203,27 +265,6 @@ class AccumulationPOMDP(AccumulationSteadyPred):
                     static_transition=False,
                 )
                 self._problem.agent.set_belief(new_belief)
-
-                if self._finite_horizon and self._frames >= self._max_frames_pred:
-                    self.logger.debug("Action: No Action.\t Trial maximum reached")
-                    meta = {
-                        "timestamp": timestamp,
-                        "target": -1,
-                        "Best candidate": cur_candidate.id,
-                        "Score": max_b,
-                        "frames": self._frames,
-                    }
-
-                # If no prediction is done, print and continue
-                elif action.name == "a_wait":
-                    self.logger.debug(f"Action: {action}\t Observation: {pomdp_target}")
-                else:
-                    meta = {
-                        "timestamp": timestamp,
-                        "target": action.id,
-                        "score": max_b,
-                        "frames": self._frames,
-                    }
 
             else:  # self._pomdp_status == 'solving'
                 self._pomdp_preds.append(pomdp_target)
@@ -280,6 +321,8 @@ class AccumulationPOMDP(AccumulationSteadyPred):
             # Send prediction
             self.o.data = make_event("predict", meta, True)
             self.logger.debug(meta)
+            if self._pomdp_status == "solved":
+                self.logger.debug(new_belief)
             self.reset()
             self._recovery = timestamp
         except UnboundLocalError:
