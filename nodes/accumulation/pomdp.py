@@ -1,13 +1,14 @@
 import numpy as np
 import random
 import json
+import itertools
 import pomdp_py
 
 from timeflux.helpers.port import make_event
 from nodes.accumulation.simple import AccumulationSteadyPred
 from pomdp_py import sarsop
-from bci_pomdp.problem import BaseProblem
-from bci_pomdp.domain import BCIObservation, BCIState
+from bci_pomdp.problem import BaseProblem, TDProblem
+from bci_pomdp.domain import BCIObservation, BCIState, TDState
 from sklearn.metrics import confusion_matrix
 
 
@@ -38,11 +39,11 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         self._miss_cost = miss_cost
         self._wait_cost = wait_cost
         self._solver_path = solver_path
-        self._discount_factor = discount_factor
+        self._finite_horizon = finite_horizon
+        self._discount_factor = 0.9999 if self._finite_horizon else discount_factor
         self._timeout = timeout
         self._memory = memory
         self._precision = precision
-        self._finite_horizon = finite_horizon
         self._problem = None
         self._policy = None
         self._pomdp_status = None
@@ -81,10 +82,30 @@ class AccumulationPOMDP(AccumulationSteadyPred):
 
         return norm_conf_matrix
 
+    def _get_pomdp_steps(self):
+        pomdp_steps = (
+            int((self._max_frames_pred - self.min_buffer_size) / self._pomdp_step) + 1
+        )
+
+        return pomdp_steps
+
     def _get_all_states(self):
         n_targets = len(self.codes)
-        all_states = [BCIState(int(target)) for target in range(n_targets)]
-        all_init_states = all_states.copy()
+
+        if self._finite_horizon:
+            pomdp_steps = self._get_pomdp_steps()
+            all_states = [
+                TDState(int(target), int(time_step))
+                for target, time_step in itertools.product(
+                    range(n_targets), range(pomdp_steps)
+                )
+            ]
+            all_init_states = [TDState(int(target), 0) for target in range(n_targets)]
+            all_states.append(TDState("term", 0))
+
+        else:
+            all_states = [BCIState(int(target)) for target in range(n_targets)]
+            all_init_states = all_states.copy()
 
         return all_states, all_init_states
 
@@ -108,15 +129,33 @@ class AccumulationPOMDP(AccumulationSteadyPred):
         # Get initial belief (uniform across initial states)
         self._init_belief = self._get_init_belief(all_states, all_init_states)
 
-        self._problem = BaseProblem(
-            self._init_belief,
-            init_true_state,
-            n_targets=len(self.codes),
-            conf_matrix=conf_matrix,
-            hit_reward=self._hit_reward,
-            miss_cost=self._miss_cost,
-            wait_cost=self._wait_cost,
-        )
+        if self._finite_horizon:
+            pomdp_steps = self._get_pomdp_steps()
+            self._problem = TDProblem(
+                self._init_belief,
+                init_true_state,
+                n_steps=pomdp_steps,
+                n_targets=len(self.codes),
+                conf_matrix=conf_matrix,
+                hit_reward=self._hit_reward,
+                miss_cost=self._miss_cost,
+                wait_cost=self._wait_cost,
+                td_obs=False,
+            )
+            self.logger.debug(f"Creating {self._problem.name} with {pomdp_steps} steps")
+            self.logger.debug("All states:")
+            self.logger.debug(all_states)
+
+        else:
+            self._problem = BaseProblem(
+                self._init_belief,
+                init_true_state,
+                n_targets=len(self.codes),
+                conf_matrix=conf_matrix,
+                hit_reward=self._hit_reward,
+                miss_cost=self._miss_cost,
+                wait_cost=self._wait_cost,
+            )
 
     def _compute_policy(self):
         self._policy = sarsop(
