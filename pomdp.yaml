@@ -59,7 +59,7 @@ graphs:
       class: UI
       params:
         routes:
-          app: ./www/expe
+          app: ./www/pomdp
         settings:
           app:
             layout:

@@ -1,0 +1,49 @@
+#layout-keyboard {
+	aspect-ratio: 3 / 4;
+}
+
+#layout-keyboard table {
+	width: 100%;
+	height: 100%;
+	table-layout: fixed;
+	font-family: monospace;
+	font-size: 30px;
+}
+
+#layout-keyboard .target {
+	color: var(--target-border-color);
+	position: relative;
+	width: 120px;
+	height: 120px;
+	margin: auto;
+	border-radius: 50%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+#layout-keyboard #sequence {
+	text-align: center;
+	padding: 0;
+	line-height: 0;
+	font-size: 50px;
+}
+
+#layout-keyboard #sequence span {
+	margin: 0 2px;
+	opacity: 0.2;
+	color: white;
+}
+
+#layout-keyboard #sequence .success {
+	color: green;
+}
+
+#layout-keyboard #sequence .failure {
+	color: red;
+}
+
+#layout-keyboard #sequence .active {
+	opacity: 1;
+	text-decoration: underline;
+}

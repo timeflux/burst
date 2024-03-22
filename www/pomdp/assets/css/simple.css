@@ -1,0 +1,67 @@
+#layout-simple {
+	aspect-ratio: 1 / 1;
+}
+
+#layout-simple .target {
+	font-size: 30px;
+	color: var(--target-border-color);
+}
+
+#layout-simple #sequence {
+	padding: 0;
+	font-size: 50px;
+	position: fixed;
+	bottom: 20px;
+	left: 20px;
+}
+
+#layout-simple #sequence span {
+	margin: 0 2px;
+	opacity: 0.2;
+	color: white;
+}
+
+#layout-simple #sequence .success {
+	color: green;
+}
+
+#layout-simple #sequence .active {
+	opacity: 1;
+	text-decoration: underline;
+}
+
+
+/* Top */
+#layout-simple :nth-child(1) {
+	top: 20px;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+/* Right */
+#layout-simple :nth-child(2) {
+	right: 20px;
+	top: 50%;
+	transform: translate(0, -50%);
+}
+
+/* Bottom */
+#layout-simple :nth-child(3) {
+	bottom: 20px;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+/* Left */
+#layout-simple :nth-child(4) {
+	left: 20px;
+	top: 50%;
+	transform: translate(0, -50%);
+}
+
+/* Center */
+#layout-simple :nth-child(5) {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
