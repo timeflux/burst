@@ -1,0 +1,67 @@
+graphs:
+
+- id: Preprocessing
+  nodes:
+    - id: sub
+      module: timeflux.nodes.zmq
+      class: Sub
+      params:
+        topics: [raw, events]
+    - id: rereference
+      module: nodes.rereference
+      class: Mean
+    - id: notch
+      module: timeflux_dsp.nodes.filters
+      class: IIRFilter
+      params:
+        filter_type: bandstop
+        frequencies: [48, 52]
+        order: 3
+    - id: bandpass
+      module: timeflux_dsp.nodes.filters
+      class: IIRFilter
+      params:
+        filter_type: bandpass
+        frequencies: [1, 25]
+        order: 2
+    - id: pub_filtered
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: filtered
+    - id: epoch
+      module: timeflux.nodes.epoch
+      class: Samples
+      params:
+        trigger: epoch
+        length: {{ EPOCH }}
+    - id: erp_node
+      module: nodes.erp
+      class: Erp
+      params:
+        buffer_size: {{ERP_BUFFER_SIZE}}
+      
+    - id: pub_erp
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: erp
+  edges:
+      - source: sub:raw
+        target: rereference
+      - source: sub:events
+        target: epoch:events
+      - source: rereference
+        target: notch
+      - source: notch
+        target: bandpass
+      - source: bandpass
+        target: pub_filtered
+      - source: bandpass
+        target: epoch
+      - source: epoch
+        target: erp_node
+      - source: erp_node
+        target: pub_erp
+  rate: 10
+

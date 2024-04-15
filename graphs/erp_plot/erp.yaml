@@ -1,0 +1,30 @@
+graphs:
+
+- id: ERP
+  nodes:
+  - id: sub
+    module: timeflux.nodes.zmq
+    class: Sub
+    params:
+      topics: [epoched, events ]
+  - id: erp_node
+    module: nodes.erp
+    class: Erp
+    params:
+      buffer_size: {{ERP_BUFFER_SIZE}}
+      
+  
+  - id: pub
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: erp
+  edges:
+    - source: sub:epoched
+      target: erp_node
+    - source: sub:events
+      target: erp_node:events
+    - source: erp_node
+      target: pub
+  rate: 10
+
