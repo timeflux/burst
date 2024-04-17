@@ -77,7 +77,7 @@ class AccumulateEpochs(Node):
             start = (now() - self._buffer_size).to_datetime64()
             stop = max_time()
             self._accumulate(start, stop)
-            self.logger.debug(f"X shape after idle: {self._X.shape if self._X is not None else None}")
+            #self.logger.debug(f"X shape after idle: {self._X.shape if self._X is not None else None}")
             # Set output streams
             self._send()
             
@@ -86,7 +86,7 @@ class AccumulateEpochs(Node):
             start = self._accumulation_start    
             stop = self._accumulation_stop if self._accumulation_stop else max_time()
             self._accumulate(start, stop)
-            self.logger.debug(f"X shape after accumulation: {self._X.shape if self._X is not None else None}")
+            #self.logger.debug(f"X shape after accumulation: {self._X.shape if self._X is not None else None}")
             # Set output streams
             self._send()
     
@@ -122,14 +122,15 @@ class AccumulateEpochs(Node):
                     index = port.data.index.values[0]
                     if index >= start and index < stop:
                         data = port.data.values
-                        self.logger.debug(f"Data shape: {data.shape}")
+                        #self.logger.debug(f"Data shape: {data.shape}")
                         label = get_meta(port, self.meta_label)
-                        if self._shape and (data.shape != self._shape):
-                            self.logger.warning("Invalid shape")
-                            continue
-                        if self.meta_label is not None and label is None:
-                            self.logger.warning("Invalid label")
-                            continue
+                        #if self._shape and (data.shape != self._shape):
+                        #    self.logger.warning("Invalid shape")
+                        #    continue
+                        #if self.meta_label is not None and label is None:
+                        #    self.logger.debug(label)
+                        #    self.logger.warning("Invalid label")
+                        #    continue
                         if self._X is None:
                             self._X = np.array([data])
                             self._shape = self._X.shape[1:]
@@ -155,22 +156,39 @@ class AccumulateEpochs(Node):
                 self._y = self._y[mask]
     
     def _send(self):
-        times = (self._X_indices
-                    )  # Keep the first timestamp of each epoch
-        names = ["label", "data"]
-        meta = (self._X_meta
-                        if self._dimensions == 2
-                        else {"epochs": self._X_meta}
-                    )
-        data = (self._X)
-        if data is not None:
-            rows = self._reindex(data, times, names)
+        meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
+        data = self._X
+        
+        if data is not None and data.size != 0:  # Check if data is not None and not empty
+            # Calculate mean value of time series
+            mean_value = np.nan if np.isnan(data.mean()) else data.mean().mean() * (10 ** 9)
+
+            # Calculate mean time series
+            mean_time_series = np.zeros(data.shape[1])  # Initialize with zeros
+            if not np.all(np.isnan(data.mean(axis=(0, 2)))):  # Check if mean contains NaN values
+                mean_time_series = data.mean(axis=(0, 2)) / max(data.mean(axis=(0, 2)))
+
+            # Calculate standard deviation
+            std = data.std(axis=(0, 2))
+
+            # Create DataFrame
+            df = pd.DataFrame({
+                "Mean_Time_Series": mean_time_series,
+                "Standard_Deviation": std
+            })
+
+            # Pad mean value to match the length of mean time series
+            mean_value_padded = np.repeat(mean_value, len(df))
+
+            # Add mean value column to DataFrame
+            df["Mean_Value"] = mean_value_padded
+
+            # Update output events
             if self.o_events.ready():
-            # Make sure we don't overwrite other events
-                self.o_events.data = pd.concat([self.o_events.data, rows])
+                self.o.data = pd.concat([self.o_events.data, df])
             else:
-                self.o_events.data = rows
-                self.o_events.meta = meta
+                self.o.data = df
+                self.o.meta = meta
             
     def _reindex(self, data, times, columns):
         if data is None:
@@ -207,37 +225,11 @@ class AccumulateEpochs(Node):
     def _clear(self):
         self._X = None
         self._y = None
-
-class MeanEpochs(Node):
-    """Calculates the mean of all epochs to generate a mean time series."""
-
-    def __init__(self, buffer_size=1000):
-        self._mean_dataframe = pd.DataFrame()
-        self._buffer_size = buffer_size
-
-    def update(self):
-        # Check if there are epochs available
-        if self.i.ready():
-            # Initialize an empty list to store individual epochs
-            epochs = []
-
-            # Iterate through input ports to gather epochs
-            for port_name, port in self.i.data.items():
-                # Check if the port represents an epoch
-                if port_name.startswith('o_') and port is not None:
-                    # Append the epoch's data to the list of epochs
-                    epochs.append(port.data)
-
-            # Concatenate all epochs into a single DataFrame
-            if epochs:
-                all_epochs = pd.concat(epochs)
-
-                # Keep only the most recent data based on buffer size
-                if len(all_epochs) > self._buffer_size:
-                    all_epochs = all_epochs.iloc[-self._buffer_size:]
-
-                # Calculate the mean across all epochs
-                self._mean_dataframe = all_epochs.mean(axis=0)
-
-                # Send the mean dataframe to the output port
-                self.o.data = self._mean_dataframe
+        self._X_indices = np.array([], dtype=np.datetime64)
+        self._X_meta = None
+        self._shape = None
+        self._dimensions = None
+        self._accumulation_start = None
+        self._accumulation_stop = None
+        self._status = IDLE
+        
