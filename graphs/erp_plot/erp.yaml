@@ -6,25 +6,33 @@ graphs:
     module: timeflux.nodes.zmq
     class: Sub
     params:
-      topics: [epoched, events ]
-  - id: erp_node
-    module: nodes.erp
-    class: Erp
+      topics: [filtered, events]
+  - id: epoch_erp
+    module: timeflux.nodes.epoch
+    class: Samples
     params:
-      buffer_size: {{ERP_BUFFER_SIZE}}
-      
-  
-  - id: pub
+      trigger: epoch
+      length: {{ EPOCH }}
+  - id: accumulate_epochs
+    module: nodes.accumulation.epochs_accumulation
+    class: AccumulateEpochs
+  - id: mean_epochs
+    module: nodes.accumulation.epochs_accumulation
+    class: MeanEpochs
+  - id: pub_erp
     module: timeflux.nodes.zmq
     class: Pub
     params:
       topic: erp
   edges:
-    - source: sub:epoched
-      target: erp_node
+    - source: sub:filtered
+      target: epoch_erp
     - source: sub:events
-      target: erp_node:events
-    - source: erp_node
-      target: pub
+      target: epoch_erp:events
+    - source: epoch_erp:*
+      target: accumulate_epochs
+    - source: accumulate_epochs
+      target: mean_epochs
+    - source: mean_epochs
+      target: pub_erp  
   rate: 10
-

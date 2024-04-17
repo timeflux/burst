@@ -1,50 +1,39 @@
 class ERPClass {
-    constructor(ioInstance) {
-        this.io = ioInstance;
+    constructor() {
         this.setupSubscriptions();
     }
 
     setupSubscriptions() {
-        // Abonnement aux données ERP
+        // Subscribe to 'erp' data
         this.io.subscribe('erp');
-        // Écouter les événements liés aux données ERP
+        
+        // Listen for 'erp' data and plot it immediately
         this.io.on('erp', (data, meta) => {
-            // Vérifier si les données proviennent du topic 'erp'
-            if (meta.topic === 'erp') {
-                // Traiter les données ERP reçues
-                this.plotErpData(data);
-            }
+            this.plotErpData(data);
         });
     }
 
     plotErpMean(erpMeanData) {
-        // Extraire les données ERP moyennes (par exemple, temps et amplitude)
-        const temps = len(erpMeanData); // Modifier pour correspondre à votre structure de données
-        const amplitude = erpMeanData.iloc[0]; // Modifier pour correspondre à votre structure de données
-
-        // Créer les données pour le graphique
-        const data = [{
-            x: temps,
-            y: amplitude,
-            type: 'scatter',
+        // Extract time points (assuming they are in the index of the DataFrame)
+        const time = erpMeanData.index;
+    
+        // Extract channel names (assuming they are column names of the DataFrame)
+        const channels = Object.keys(erpMeanData.columns);
+    
+        // Extract amplitude data for each channel
+        const amplitudeData = channels.map(channel => erpMeanData[channel]);
+    
+        // Create traces for each channel
+        const traces = channels.map((channel, index) => ({
+            x: time,
+            y: amplitudeData[index],
             mode: 'lines',
-            name: 'ERP moyen'
-        }];
-
-        // Définir les options de la disposition
-        const layout = {
-            title: 'ERP moyen',
-            xaxis: { title: 'Temps (ms)' },
-            yaxis: { title: 'Amplitude' }
-        };
-
-        // Tracer le graphique à l'intérieur du conteneur 'erp-plot'
-        Plotly.newPlot('erp-plot', data, layout);
+            name: channel // Use channel name as trace name
+        }));
+    
+        // Update the plot with the new data
+        Plotly.newPlot('erp-plot', traces);
     }
 }
 
-// Exemple d'utilisation :
-async settings => {
-    let ioInstance = new IO(); // Remplacez par votre instance IO
-    let erpClass = new ERPClass(ioInstance);
-};
+let erpClass = new ERPClass();

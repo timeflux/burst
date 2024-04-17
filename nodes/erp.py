@@ -28,20 +28,23 @@ class Erp(Node):
     def update_mean_erp(self):
         if len(self.epoch_buffer) > 0:
             concatenated_epochs = pd.concat(self.epoch_buffer)
+            if isinstance(concatenated_epochs, pd.Series):
+                concatenated_epochs = concatenated_epochs.to_frame().T  # Convert Series to DataFrame
             self.mean_erp = concatenated_epochs.mean(axis=0)
-        
+
     def update(self):
         if not self.i.ready():
             return
 
-        self.o = self.i.data
+        self.o = self.i
 
-        self.epoch_buffer.append(self.o)
+        self.epoch_buffer.append(self.o.data)
         
         self.update_mean_erp()
         
         if self.mean_erp is not None:
-            self.o = self.mean_erp
+            # Preserve datetime index of the original data
+            self.o.data = pd.DataFrame(data=self.mean_erp.values.reshape(1, -1), index=[self.o.data.index[-1]])
 
     def terminate(self):
         self.reset()

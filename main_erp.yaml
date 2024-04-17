@@ -1,20 +1,26 @@
 import:
+  # Device graph : sensor
   - graphs/{{DEVICE}}.yaml
-  - graphs/erp_plot/preprocessing_epoch.yaml
+  # Preprocessing graph
+  - graphs/erp_plot/preprocessing.yaml
+  # Classification graph
   - graphs/classification.yaml
-  #- graphs/erp_plot/erp.yaml
-  #- graphs/erp_plot/classification.yaml
+  # ERP computation graph
+  - graphs/erp_plot/erp.yaml
+  # Record graph
   {% if RECORD_DATA == 'true' %}
   - graphs/record.yaml
   {% endif %}
 graphs:
 
+  # Broker node
   - id: Broker
     nodes:
     - id: proxy
       module: timeflux.nodes.zmq
       class: Broker
 
+  # UI graph
   - id: UI
     nodes:
     - id: uiexpe
@@ -89,36 +95,6 @@ graphs:
       target: uiexpe:erp
     - source: sub:filtered
       target: uiexpe:eeg
-    - source: sub:epoched
-      target: uiexpe:epoched
     - source: sub:predictions
       target: uiexpe:predictions
     rate: 20
-
-  # - id: Debug
-  #   nodes:
-  #   - id: sub
-  #     module: timeflux.nodes.zmq
-  #     class: Sub
-  #     params:
-  #       topics: [ events, predictions ]
-  #   - id: display_events
-  #     module: timeflux.nodes.debug
-  #     class: Display
-  #     params:
-  #       meta: true
-  #   - id: display_predictions
-  #     module: timeflux.nodes.debug
-  #     class: Display
-  #     params:
-  #       meta: true
-  #   edges:
-  #     - source: sub:events
-  #       target: display_events
-  #     - source: sub:predictions
-  #       target: display_predictions
-  #   rate: 10
-
-
-
-
