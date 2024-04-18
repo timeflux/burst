@@ -158,15 +158,15 @@ class AccumulateEpochs(Node):
     def _send(self):
         meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
         data = self._X
-        
+        #self.logger.debug(f"X size: {data.size if data is not None else None}")
         if data is not None and data.size != 0:  # Check if data is not None and not empty
             # Calculate mean value of time series
-            mean_value = np.nan if np.isnan(data.mean()) else data.mean().mean() * (10 ** 9)
+            mean_value = np.nan if np.isnan(data.mean()) else data.mean().mean()
 
             # Calculate mean time series
             mean_time_series = np.zeros(data.shape[1])  # Initialize with zeros
             if not np.all(np.isnan(data.mean(axis=(0, 2)))):  # Check if mean contains NaN values
-                mean_time_series = data.mean(axis=(0, 2)) * (10 ** 9)
+                mean_time_series = data.mean(axis=(0, 2)) 
 
             # Calculate standard deviation
             std = data.std(axis=(0, 2))
@@ -174,7 +174,7 @@ class AccumulateEpochs(Node):
             # Create DataFrame
             df = pd.DataFrame({
                 "Mean_Time_Series": mean_time_series,
-                "Standard_Deviation": std
+                "c": std
             })
 
             # Pad mean value to match the length of mean time series
@@ -189,6 +189,7 @@ class AccumulateEpochs(Node):
             else:
                 self.o.data = df
                 self.o.meta = meta
+            #self.logger.debug(f"Output index: {self.o.data.index}")
             
     def _reindex(self, data, times, columns):
         if data is None:
