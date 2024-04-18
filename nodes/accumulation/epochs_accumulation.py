@@ -166,7 +166,7 @@ class AccumulateEpochs(Node):
             # Calculate mean time series
             mean_time_series = np.zeros(data.shape[1])  # Initialize with zeros
             if not np.all(np.isnan(data.mean(axis=(0, 2)))):  # Check if mean contains NaN values
-                mean_time_series = data.mean(axis=(0, 2)) / max(data.mean(axis=(0, 2)))
+                mean_time_series = data.mean(axis=(0, 2)) * (10 ** 9)
 
             # Calculate standard deviation
             std = data.std(axis=(0, 2))

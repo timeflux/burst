@@ -1,6 +1,6 @@
 class ERPClass {
     constructor() {
-        this.setupSubscriptions();
+        // this.setupSubscriptions();
     }
 
     setupSubscriptions() {
@@ -15,25 +15,53 @@ class ERPClass {
 
     plotErpMean(erpMeanData) {
         // Extract time points (assuming they are in the index of the DataFrame)
-        const time = erpMeanData.index;
+        const time = Object.keys(erpMeanData.index);
     
-        // Extract channel names (assuming they are column names of the DataFrame)
-        const channels = Object.keys(erpMeanData.columns);
+        // Extract mean time series data
+        const meanTimeSeries = erpMeanData['mean-time series'];
     
-        // Extract amplitude data for each channel
-        const amplitudeData = channels.map(channel => erpMeanData[channel]);
+        // Extract mean value data
+        const meanValue = erpMeanData['mean value'];
     
-        // Create traces for each channel
-        const traces = channels.map((channel, index) => ({
-            x: time,
-            y: amplitudeData[index],
-            mode: 'lines',
-            name: channel // Use channel name as trace name
-        }));
+        // Extract standard deviation data
+        const stdValue = erpMeanData['std value'];
+    
+        // Create traces
+        const traces = [
+            {
+                x: time,
+                y: meanTimeSeries,
+                mode: 'lines',
+                name: 'Mean Time Series'
+            },
+            {
+                x: time,
+                y: meanValue,
+                mode: 'lines',
+                name: 'Mean Value'
+            },
+            {
+                x: time,
+                y: stdValue,
+                mode: 'lines',
+                name: 'Standard Deviation'
+            }
+        ];
     
         // Update the plot with the new data
         Plotly.newPlot('erp-plot', traces);
     }
 }
 
-let erpClass = new ERPClass();
+load_settings().then(async settings => {
+    // Initialize the ERP class
+    let ERP = new ERPClass(settings.erp);
+
+    // Subscribe to 'erp' data
+    ERP.io.subscribe('erp');
+        
+    // Listen for 'erp' data and plot it immediately
+    ERP.io.on('erp', (data, meta) => {
+        ERP.plotErpData(data);
+    });
+});
