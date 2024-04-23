@@ -78,6 +78,7 @@ graphs:
               target_success: "#{{ UI_TARGET_SUCCESS_COLOR }}"
               target_failure: "#{{ UI_TARGET_FAILURE_COLOR }}"
               target_lock: "#{{ UI_TARGET_LOCK_COLOR }}"
+
     - id: sub
       module: timeflux.nodes.zmq
       class: Sub

@@ -7,82 +7,6 @@ class ERPClass {
             this.io.event('session_ends');
         }
 
-        // Initialize scheduler
-        this.scheduler = new Scheduler();
-        this.scheduler.start();
-
-        // Initialize plots
-        this.initPlots();
-    }
-
-    initPlots() {
-        // Initialize erp-plot with empty data
-        Plotly.newPlot('erp-plot', []);
-
-        // Initialize dumb-plot with dummy data
-        this.plotDummy();
-    }
-
-    plotErpMean(erpMeanData) {
-        if (erpMeanData == null) {
-            return;
-        } else {
-            // Extract time points (assuming they are in the index of the DataFrame)
-            //const time = Object.keys(erpMeanData.index || {});
-            
-            // Extract mean time series data
-            const meanTimeSeries = erpMeanData['Mean_Time_Series'] || [];
-            
-            // Extract mean value data
-            const meanValue = erpMeanData['Mean_Value'] || [];
-            
-            // Extract standard deviation data
-            const stdValue = erpMeanData['Standard_Deviation'] || [];
-            
-            // Update existing traces with new data
-            Plotly.restyle('erp-plot', {
-                //x: [time, time, time], // Wrap x data for each trace in an array
-                y: [meanTimeSeries, meanValue, stdValue] // Wrap y data for each trace in an array
-            });
-            
-            // Manually set the range of y-axis
-            // Plotly.relayout('erp-plot', {
-            //    'yaxis.range': [Math.min(...meanTimeSeries, ...meanValue, ...stdValue), Math.max(...meanTimeSeries, ...meanValue, ...stdValue)]
-            // });
-        }
-    }
-
-    
-
-    plotDummy() {
-
-        var trace1 = {
-            x: [1, 2, 3, 4],
-            y: [10, 15, 13, 17],
-            type: 'scatter'
-          };
-          
-          var trace2 = {
-            x: [1, 2, 3, 4],
-            y: [16, 5, 11, 9],
-            type: 'scatter'
-          };
-          
-          var data = [trace1, trace2];
-          
-          Plotly.newPlot('dumb-plot', data);
-    }
-}
-
-class ERPClass2 {
-    constructor() {
-        // Initialize events
-        this.io = new IO();
-        this.io.on('connect', () => this.io.event('session_begins', this.options));
-        window.onbeforeunload = () => {
-            this.io.event('session_ends');
-        }
-
         this.time = 0;
 
         // Initialize scheduler
@@ -100,119 +24,71 @@ class ERPClass2 {
                 x: [],
                 y: [],
                 mode: 'lines',
-                name: 'Mean Time Series'
+                name: 'Mean Epoch'
             },
-            {
-                x: [],
-                y: [],
-                mode: 'lines',
-                name: 'Mean Value'
-            },
-            {
-                x: [],
-                y: [],
-                mode: 'lines',
-                name: 'Standard Deviation'
-            }
         ];
 
-        Plotly.newPlot('erp-plot', this.traces);
-    }
-
-
-    plotErpMean(erpMeanData) {
-        // Extract mean time series data
-        var meanTimeSeries = erpMeanData['Mean_Time_Series'];
-        
-        // Extract mean value data
-        var meanValue = erpMeanData['Mean_Value'];
-        
-        // Extract standard deviation data
-        var stdValue = erpMeanData['Standard_Deviation'];
-    
-        this.time += 1;
-    
-        // Push the new x value
-        this.traces.forEach(trace => {
-            trace.x.push(this.time);
-            // Keep only the last 300 values
-            if (trace.x.length > 300) {
-                trace.x.shift(); // Remove the first element
-            }
-        });
-    
-        // Push the new y values
-        this.traces[0].y.push(meanTimeSeries);
-        this.traces[1].y.push(meanValue);
-        this.traces[2].y.push(stdValue);
-    
-        // Keep only the last 300 values
-        this.traces.forEach(trace => {
-            if (trace.y.length > 300) {
-                trace.y.shift(); // Remove the first element
-            }
-        })
-        
         Plotly.newPlot('erp-plot', this.traces);
     }
 
     plotData(data) {
-        // Initialize arrays to store the values
-        var meanTimeSeries = [];
-        var meanValue = [];
-        var stdValue = [];
+        // Get the length of the data
+        const length = Object.keys(data).length;
     
+        // Initialize arrays to store the values
+        const meanTimeSeries = [];
+        const meanValue = data[0]['Mean_Value'];
+        const stdValue = [];
+    
+        // Iterate through each data point
         for (let key in data) {
             const element = data[key];
             meanTimeSeries.push(element['Mean_Time_Series']);
-            meanValue.push(element['Mean_Value']);
             stdValue.push(element['Standard_Deviation']);
         }
-
-        var mean_plus_std = meanTimeSeries + stdValue;
-        var mean_minus_std = meanTimeSeries - stdValue;
+    
+        // Calculate the upper and lower bounds for the envelope
+        const upperBound = meanTimeSeries.map((value, index) => value + stdValue[index]);
+        const lowerBound = meanTimeSeries.map((value, index) => value - stdValue[index]);
     
         // Plot the data
-        var traces1 = [
+        const traces = [
             {
-                x: Array.from({length: 300}, (_, i) => i), // Create an array of indices from 0 to 299
+                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
                 y: meanTimeSeries,
                 mode: 'lines',
-                name: 'Mean Time Series'
+                name: 'Mean Epoch'
             },
             {
-                x: Array.from({length: 300}, (_, i) => i), // Create an array of indices from 0 to 299
-                y: mean_plus_std,
-                mode: 'lines',
-                name: 'Mean - Std'
-            },
-            {
-                x: Array.from({length: 300}, (_, i) => i), // Create an array of indices from 0 to 299
-                y: mean_minus_std,
-                mode: 'lines',
+                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
+                y: upperBound,
+                fill: 'tonexty', // Fill the area between upper and lower bounds
+                mode: 'none', // No line for the envelope
                 name: 'Mean + Std'
+            },
+            {
+                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
+                y: lowerBound,
+                fill: 'tonexty', 
+                mode: 'none',
+                name: 'Mean - Std'
             }
         ];
-        var traces2 = {
-            x: Array.from({length: 300}, (_, i) => i),
-            y: meanValue,
-            mode: 'lines',
-            name: 'Mean Value'
-        }
-        
-        var traces3 = [{
-            x: Array.from({length: 300}, (_, i) => i),
-            y: stdValue,
-            mode: 'lines',
-            name: 'Standard Deviation'
-        }]
+
+        const layout = {
+            xaxis: {
+                title: 'Time step'
+            },
+            yaxis: {
+                title: 'Amplitude'
+            }
+        };
     
-        Plotly.newPlot('erp-plot', traces3);
-        // Plotly.newPlot('mean-plot', traces);
+        Plotly.newPlot('erp-plot', traces, layout);
     }
+    
 
 }
-
 
 function exploreObject(obj) {
     // Check if the object is an array
@@ -234,6 +110,7 @@ function exploreObject(obj) {
         console.log(obj);
     }
 }
+
 function checkDataShape(data) {
     const columns = Object.keys(data);
     const numberOfRows = data[columns[0]].length; // Assuming the first column has the same length for all rows
@@ -244,11 +121,10 @@ function checkDataShape(data) {
     console.log("Data shape")
 }
 
-
 // Load settings and initialize ERPClass
 load_settings().then(async settings => {
     // Initialize the ERP class
-    let ERP = new ERPClass2(settings.erp);
+    let ERP = new ERPClass(settings.erp);
 
     // Subscribe to 'erp' data
     ERP.io.subscribe('erp');
@@ -258,6 +134,5 @@ load_settings().then(async settings => {
         //console.log(data);
         ERP.plotData(data);
     });
-
 
 });

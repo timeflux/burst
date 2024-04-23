@@ -37,7 +37,9 @@ class Random(Node):
 
 
 class Signal(Node):
-    def __init__(self, channels=5, rate=100, amplitude=200, offset=0, names=None, seed=None):
+    def __init__(
+        self, channels=5, rate=100, amplitude=200, offset=0, names=None, seed=None
+    ):
         """Return random floats within the given peak-to-peak amplitude"""
         self._rate = rate
         self._amplitude = amplitude
@@ -57,7 +59,8 @@ class Signal(Node):
             shape = (samples, self._channels)
             self.o.set(
                 np.random.random_sample(shape) * self._amplitude
-                - (self._amplitude / 2) + self._offset,
+                - (self._amplitude / 2)
+                + self._offset,
                 names=self._names,
                 meta={"rate": self._rate},
             )

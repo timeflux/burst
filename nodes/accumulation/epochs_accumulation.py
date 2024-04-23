@@ -10,16 +10,43 @@ from timeflux.helpers.clock import now, min_time, max_time
 IDLE = 0
 ACCUMULATING = 1
 
-class AccumulateEpochs(Node):
-    """Accumulates epochs into a DataFrame without double samples."""
 
-    def __init__(self,
+class AccumulateEpochs(Node):
+    """Accumulates epochs into a DataFrame without double samples.
+    Output is a dataframe with three columns, containing the mean time series, standard deviation, and mean value.
+    The size of the time series is determined by the length of epochs in the input data.
+
+    Inputs are expected to be epoched data. Continuous data are handled but are not intended for this node.
+    This node is best used after the Sample node from timeflux.epoch.
+
+    This node accumulate data and process all the accumulated epochs to deliver the output dataframe.
+    The processing consists of calculating the mean epochs (time series), standard deviation at each point, and mean value of the accumulated epochs.
+
+    Attributes:
+        i (Port): Continuous data input, expects DataFrame.
+        i_* (Port): Epoched data input, expects DataFrame.
+        i_events (Port): Event input, expects DataFrame.
+        o (Port): Accumulated and processed data output, provides DataFrame.
+
+    Args:
+        meta_label (tuple): Tuple containing labels for epoch, context, and target.
+        event_start_accumulation (str): Event marking the start of accumulation.
+        event_stop_accumulation (str): Event marking the end of accumulation.
+        event_reset (str): Event triggering the reset of accumulation.
+        buffer_size (str): Buffer size for accumulation duration.
+        passthrough (bool): Flag indicating whether to pass data through without accumulation.
+
+    """
+
+    def __init__(
+        self,
         meta_label=("epoch", "context", "target"),
         event_start_accumulation="accumulation_starts",
         event_stop_accumulation="accumulation_stops",
         event_reset="reset",
-        buffer_size="60s",
-        passthrough=False,):
+        buffer_size="2s",
+        passthrough=False,
+    ):
         self.event_start_accumulation = event_start_accumulation
         self.event_stop_accumulation = event_stop_accumulation
         self.event_reset = event_reset
@@ -38,10 +65,12 @@ class AccumulateEpochs(Node):
         self._dimensions = None
         self._accumulation_start = None
         self._accumulation_stop = None
-        
 
     def update(self):
-
+        """Update the node.
+        It checks for reset events, starts and stops accumulation, and accumulates data.
+        After the accumulation, data are processed and sent.
+        """
         # Reset
         if self.event_reset:
             matches = match_events(self.i_events, self.event_reset)
@@ -50,7 +79,7 @@ class AccumulateEpochs(Node):
                 self._reset()
                 self.o_events.data = make_event("reset")
 
-        # Are we dealing with continuous data or epochs?
+        # Are we dealing with continuous data or epochs? Epochs are intended.
         if self._dimensions is None:
             port_name = "i"
             if getattr(self, port_name).ready():
@@ -77,25 +106,22 @@ class AccumulateEpochs(Node):
             start = (now() - self._buffer_size).to_datetime64()
             stop = max_time()
             self._accumulate(start, stop)
-            #self.logger.debug(f"X shape after idle: {self._X.shape if self._X is not None else None}")
             # Set output streams
             self._send()
-            
+
         # Accumulate
         if self._status == ACCUMULATING:
-            start = self._accumulation_start    
+            start = self._accumulation_start
             stop = self._accumulation_stop if self._accumulation_stop else max_time()
             self._accumulate(start, stop)
-            #self.logger.debug(f"X shape after accumulation: {self._X.shape if self._X is not None else None}")
             # Set output streams
             self._send()
-    
+
     def _accumulate(self, start, stop):
         # Set defaults
         if self.i.ready():
             self.logger.debug(f"Accumulating from {start} to {stop}")
             self.logger.debug(f"Dimensions: {self._dimensions}")
-            #self.logger.debug(f"Shape: {self.i.data.shape if self.i.data is not None else None}")
         indices = np.array([], dtype=np.datetime64)
         # Accumulate continuous data
         if self._dimensions == 2:
@@ -148,29 +174,31 @@ class AccumulateEpochs(Node):
             if self._y is not None:
                 self._y = self._y[mask]
 
-    
     def _send(self):
+        """Processes all the data to compute the mean time series, the mean value and the standard deviation of the input epochs.
+        Sends the dataframe containing three columns and time series of the same size as the input epochs on default port.
+        """
         meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
         data = self._X
-        #self.logger.debug(f"X size: {data.shape if data is not None else None}")
-        #self.logger.debug(f"Is there any NaN : {np.isnan(data).any() if data is not None else None}")
-        if data is not None and data.size != 0:  # Check if data is not None and not empty
+
+        if data is not None and data.size != 0:
             # Calculate mean value of time series
             mean_value = np.nan if np.isnan(data.mean()) else data.mean().mean()
 
             # Calculate mean time series
             mean_time_series = np.zeros(data.shape[1])  # Initialize with zeros
-            if not np.all(np.isnan(data.mean(axis=(0, 2)))):  # Check if mean contains NaN values
+            if not np.all(
+                np.isnan(data.mean(axis=(0, 2)))
+            ):  # Check if mean contains NaN values
                 mean_time_series = data.mean(axis=(0, 2))
 
             # Calculate standard deviation
             std = data.std(axis=(0, 2))
 
             # Create DataFrame
-            df = pd.DataFrame({
-                "Mean_Time_Series": mean_time_series,
-                "Standard_Deviation": std
-            })
+            df = pd.DataFrame(
+                {"Mean_Time_Series": mean_time_series, "Standard_Deviation": std}
+            )
 
             # Pad mean value to match the length of mean time series
             mean_value_padded = np.repeat(mean_value, len(df))
@@ -180,56 +208,9 @@ class AccumulateEpochs(Node):
 
             # Fill NaN values with 0
             df.fillna(0, inplace=True)
-            
-            df.index = pd.to_datetime(df.index, unit='s')
-            
+
+            df.index = pd.to_datetime(df.index, unit="s")
+
             # Update output events
             self.o.data = df
             self.o.meta = meta
-            #self.o.data = pd.DataFrame(df.to_dict(orient='list'))
-            
-            
-            
-    def _reindex(self, data, times, columns):
-        if data is None:
-            return
-        if len(data) != len(times):
-            if self.resample:
-                # Resample at a specific frequency
-                kwargs = {"periods": len(data)}
-                if self.resample_rate is None:
-                    kwargs["freq"] = pd.infer_freq(times)
-                    kwargs["freq"] = pd.tseries.frequencies.to_offset(kwargs["freq"])
-                else:
-                    kwargs["freq"] = pd.DateOffset(seconds=1 / self.resample_rate)
-                if self.resample_direction == "right":
-                    kwargs["start"] = times[0]
-                elif self.resample_direction == "left":
-                    kwargs["end"] = times[-1]
-                else:
-
-                    def middle(a):
-                        return int(np.ceil(len(a) / 2)) - 1
-
-                    kwargs["start"] = times[middle(times)] - (
-                        middle(data) * kwargs["freq"]
-                    )
-                times = pd.date_range(**kwargs)
-
-            else:
-                # Linearly arange between first and last
-                times = pd.date_range(start=times[0], end=times[-1], periods=len(data))
-
-        return pd.DataFrame(data, times, columns)
-                
-    def _clear(self):
-        self._X = None
-        self._y = None
-        self._X_indices = np.array([], dtype=np.datetime64)
-        self._X_meta = None
-        self._shape = None
-        self._dimensions = None
-        self._accumulation_start = None
-        self._accumulation_stop = None
-        self._status = IDLE
-        

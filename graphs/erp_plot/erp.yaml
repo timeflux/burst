@@ -12,7 +12,7 @@ graphs:
     class: Samples
     params:
       trigger: epoch
-      length: {{ EPOCH_ERP }}
+      length: {{ ERP_LENGTH }}
   - id: accumulate_epochs
     module: nodes.accumulation.epochs_accumulation
     class: AccumulateEpochs
