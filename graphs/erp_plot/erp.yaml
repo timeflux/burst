@@ -29,5 +29,5 @@ graphs:
     - source: epoch_erp:*
       target: accumulate_epochs
     - source: accumulate_epochs
-      target: pub_erp  
+      target: pub_erp
   rate: 10

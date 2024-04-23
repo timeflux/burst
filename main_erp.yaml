@@ -82,7 +82,7 @@ graphs:
       module: timeflux.nodes.zmq
       class: Sub
       params:
-        topics: [ filtered, predictions , events, erp]
+        topics: [ filtered, predictions , events, erp,epochs_test]
     - id: pubexpe
       module: timeflux.nodes.zmq
       class: Pub

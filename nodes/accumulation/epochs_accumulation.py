@@ -18,7 +18,7 @@ class AccumulateEpochs(Node):
         event_start_accumulation="accumulation_starts",
         event_stop_accumulation="accumulation_stops",
         event_reset="reset",
-        buffer_size="5s",
+        buffer_size="60s",
         passthrough=False,):
         self.event_start_accumulation = event_start_accumulation
         self.event_stop_accumulation = event_stop_accumulation
@@ -95,7 +95,7 @@ class AccumulateEpochs(Node):
         if self.i.ready():
             self.logger.debug(f"Accumulating from {start} to {stop}")
             self.logger.debug(f"Dimensions: {self._dimensions}")
-            self.logger.debug(f"Shape: {self.i.data.shape if self.i.data is not None else None}")
+            #self.logger.debug(f"Shape: {self.i.data.shape if self.i.data is not None else None}")
         indices = np.array([], dtype=np.datetime64)
         # Accumulate continuous data
         if self._dimensions == 2:
@@ -122,15 +122,8 @@ class AccumulateEpochs(Node):
                     index = port.data.index.values[0]
                     if index >= start and index < stop:
                         data = port.data.values
-                        #self.logger.debug(f"Data shape: {data.shape}")
                         label = get_meta(port, self.meta_label)
-                        #if self._shape and (data.shape != self._shape):
-                        #    self.logger.warning("Invalid shape")
-                        #    continue
-                        #if self.meta_label is not None and label is None:
-                        #    self.logger.debug(label)
-                        #    self.logger.warning("Invalid label")
-                        #    continue
+
                         if self._X is None:
                             self._X = np.array([data])
                             self._shape = self._X.shape[1:]
@@ -154,11 +147,13 @@ class AccumulateEpochs(Node):
             self._X_indices = self._X_indices[mask]
             if self._y is not None:
                 self._y = self._y[mask]
+
     
     def _send(self):
         meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
         data = self._X
-        #self.logger.debug(f"X size: {data.size if data is not None else None}")
+        #self.logger.debug(f"X size: {data.shape if data is not None else None}")
+        #self.logger.debug(f"Is there any NaN : {np.isnan(data).any() if data is not None else None}")
         if data is not None and data.size != 0:  # Check if data is not None and not empty
             # Calculate mean value of time series
             mean_value = np.nan if np.isnan(data.mean()) else data.mean().mean()
@@ -166,7 +161,7 @@ class AccumulateEpochs(Node):
             # Calculate mean time series
             mean_time_series = np.zeros(data.shape[1])  # Initialize with zeros
             if not np.all(np.isnan(data.mean(axis=(0, 2)))):  # Check if mean contains NaN values
-                mean_time_series = data.mean(axis=(0, 2)) 
+                mean_time_series = data.mean(axis=(0, 2))
 
             # Calculate standard deviation
             std = data.std(axis=(0, 2))
@@ -174,7 +169,7 @@ class AccumulateEpochs(Node):
             # Create DataFrame
             df = pd.DataFrame({
                 "Mean_Time_Series": mean_time_series,
-                "c": std
+                "Standard_Deviation": std
             })
 
             # Pad mean value to match the length of mean time series
@@ -183,13 +178,17 @@ class AccumulateEpochs(Node):
             # Add mean value column to DataFrame
             df["Mean_Value"] = mean_value_padded
 
+            # Fill NaN values with 0
+            df.fillna(0, inplace=True)
+            
+            df.index = pd.to_datetime(df.index, unit='s')
+            
             # Update output events
-            if self.o_events.ready():
-                self.o.data = pd.concat([self.o_events.data, df])
-            else:
-                self.o.data = df
-                self.o.meta = meta
-            #self.logger.debug(f"Output index: {self.o.data.index}")
+            self.o.data = df
+            self.o.meta = meta
+            #self.o.data = pd.DataFrame(df.to_dict(orient='list'))
+            
+            
             
     def _reindex(self, data, times, columns):
         if data is None:
