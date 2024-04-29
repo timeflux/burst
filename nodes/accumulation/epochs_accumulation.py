@@ -65,6 +65,7 @@ class AccumulateEpochs(Node):
         self._dimensions = None
         self._accumulation_start = None
         self._accumulation_stop = None
+        self._electrodes = None
 
     def update(self):
         """Update the node.
@@ -100,6 +101,17 @@ class AccumulateEpochs(Node):
             if matches is not None:
                 self._accumulation_stop = matches.index.values[0]
                 self.logger.debug("Stop accumulation")
+                
+        # Set the electrodes layout
+        if self._electrodes is None:
+            if self._dimensions == 2:
+                if self.i.ready():
+                    self._electrodes = self.i.data.columns
+            elif self._dimensions == 3:
+                for _, _, port in self.iterate("i_*"):
+                    if port.ready():
+                        self._electrodes = port.data.columns
+                        break
 
         # Always buffer a few seconds, in case the start event is coming late
         if self._status == IDLE:
@@ -174,7 +186,7 @@ class AccumulateEpochs(Node):
             if self._y is not None:
                 self._y = self._y[mask]
 
-    def _send(self):
+    def _send_mean_electrodes(self):
         """Processes all the data to compute the mean time series, the mean value and the standard deviation of the input epochs.
         Sends the dataframe containing three columns and time series of the same size as the input epochs on default port.
         """
@@ -209,8 +221,32 @@ class AccumulateEpochs(Node):
             # Fill NaN values with 0
             df.fillna(0, inplace=True)
 
-            df.index = pd.to_datetime(df.index, unit="s")
+            #df.index = pd.to_datetime(df.index, unit="s")
+            # Modify timestamps to be streamed on live
+            #df.index = (now() + pd.to_timedelta(df.index, unit="s"))
+            df.index = now() - pd.to_timedelta(df.index, unit="s")
+            # Update output events
+            self.o.data = df
+            self.o.meta = meta
+
+    def _send(self):
+        """
+        Processes all the data to compute the event-related potentials (ERPs) for each electrode.
+        Sends the dataframe containing the ERP for each electrode on the default port.
+        """
+        meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
+        data = self._X
+
+        if data is not None and data.size != 0:
+            # Compute ERP for each electrode
+            erp = np.mean(data, axis=0)
+            # Create DataFrame for ERPs with electrode labels as columns
+            df = pd.DataFrame(data=erp, columns=self._electrodes)
+
+            # Modify timestamps to be streamed live
+            df.index = now() + pd.to_timedelta(df.index, unit="s")
 
             # Update output events
             self.o.data = df
             self.o.meta = meta
+

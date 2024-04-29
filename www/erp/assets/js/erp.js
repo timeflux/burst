@@ -28,10 +28,12 @@ class ERPClass {
             },
         ];
 
+        this._electrodes = [];
+
         Plotly.newPlot('erp-plot', this.traces);
     }
 
-    plotData(data) {
+    plotData_std(data) {
         // Get the length of the data
         const length = Object.keys(data).length;
     
@@ -75,6 +77,7 @@ class ERPClass {
             }
         ];
 
+
         const layout = {
             xaxis: {
                 title: 'Time step'
@@ -85,6 +88,80 @@ class ERPClass {
         };
     
         Plotly.newPlot('erp-plot', traces, layout);
+    }
+
+    plotData_obsolete(data) {
+        // Get the length of the data
+        const length = Object.keys(data).length;
+    
+        // Initialize arrays to store the values
+        const meanTimeSeries = [];
+
+        // Iterate through each data point
+        for (let key in data) {
+            const element = data[key];
+            meanTimeSeries.push(element['Mean_Time_Series']);
+        }
+    
+        // Plot the data
+        const traces = [
+            {
+                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
+                y: meanTimeSeries,
+                mode: 'lines',
+                name: 'Mean Epoch'
+            }
+        ];
+
+        const layout = {
+            xaxis: {
+                title: 'Time step'
+            },
+            yaxis: {
+                title: 'Amplitude'
+            }
+        };
+    
+        Plotly.newPlot('erp-plot', traces, layout);
+    }
+
+    plotData(data) {
+        // Get the length of the data
+        const length = Object.keys(data).length;
+    
+        // Initialize arrays to store the values for each electrode
+        const traces = [];
+        for (let electrode of this._electrodes) {
+            const meanTimeSeries = [];
+            for (let key in data) {
+                const element = data[key];
+                meanTimeSeries.push(element[electrode]);
+            }
+            traces.push({
+                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
+                y: meanTimeSeries,
+                mode: 'lines',
+                name: electrode
+            });
+        }
+        
+        const layout = {
+            xaxis: {
+                title: 'Time step'
+            },
+            yaxis: {
+                title: 'Amplitude'
+            }
+        };
+
+        Plotly.newPlot('erp-plot', traces, layout);
+    }
+
+    electrode_update(data) {
+        const firstEntry = Object.values(data)[0];
+        const electrodeNames = Object.keys(firstEntry);
+
+        this._electrodes = electrodeNames;
     }
     
 
@@ -131,8 +208,11 @@ load_settings().then(async settings => {
 
     // Listen for 'erp' data and plot it immediately
     ERP.io.on('erp', (data, meta) => {
+        if (ERP._electrodes.length === 0) {
+            ERP.electrode_update(data);
+        }
         //console.log(data);
+        //console.log(ERP._electrodes);
         ERP.plotData(data);
     });
-
 });

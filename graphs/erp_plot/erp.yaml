@@ -16,6 +16,8 @@ graphs:
   - id: accumulate_epochs
     module: nodes.accumulation.epochs_accumulation
     class: AccumulateEpochs
+    params:
+      buffer_size: {{ ERP_BUFFER_SIZE }}
   - id: pub_erp
     module: timeflux.nodes.zmq
     class: Pub

@@ -1,0 +1,26 @@
+graphs:
+
+  - id: EEG
+    nodes:
+    - id: eeg
+      module: timeflux.nodes.hdf5
+      class: Replay
+      params:
+        filename: {{HDF5_FILEPATH}}
+        keys: {{HDF5_KEYS}}
+    - id: pub_raw
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: raw
+    - id: pub_events
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: events
+    edges:
+      - source: eeg:raw
+        target: pub_raw
+      - source: eeg:events
+        target: pub_events
+    rate: 20
