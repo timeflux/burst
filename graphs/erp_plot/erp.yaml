@@ -18,6 +18,7 @@ graphs:
     class: AccumulateEpochs
     params:
       buffer_size: {{ ERP_BUFFER_SIZE }}
+      meta_label: [epoch, context, bit]
   - id: pub_erp
     module: timeflux.nodes.zmq
     class: Pub

@@ -161,7 +161,7 @@ class AccumulateEpochs(Node):
                     if index >= start and index < stop:
                         data = port.data.values
                         label = get_meta(port, self.meta_label)
-
+                        
                         if self._X is None:
                             self._X = np.array([data])
                             self._shape = self._X.shape[1:]
@@ -173,6 +173,7 @@ class AccumulateEpochs(Node):
                                 self._y = np.array([label])
                             else:
                                 self._y = np.append(self._y, [label])
+                            self.logger.debug(f"Labels: {self._y}")
 
         # Store indices
         if indices.size != 0:
@@ -186,49 +187,6 @@ class AccumulateEpochs(Node):
             if self._y is not None:
                 self._y = self._y[mask]
 
-    def _send_mean_electrodes(self):
-        """Processes all the data to compute the mean time series, the mean value and the standard deviation of the input epochs.
-        Sends the dataframe containing three columns and time series of the same size as the input epochs on default port.
-        """
-        meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
-        data = self._X
-
-        if data is not None and data.size != 0:
-            # Calculate mean value of time series
-            mean_value = np.nan if np.isnan(data.mean()) else data.mean().mean()
-
-            # Calculate mean time series
-            mean_time_series = np.zeros(data.shape[1])  # Initialize with zeros
-            if not np.all(
-                np.isnan(data.mean(axis=(0, 2)))
-            ):  # Check if mean contains NaN values
-                mean_time_series = data.mean(axis=(0, 2))
-
-            # Calculate standard deviation
-            std = data.std(axis=(0, 2))
-
-            # Create DataFrame
-            df = pd.DataFrame(
-                {"Mean_Time_Series": mean_time_series, "Standard_Deviation": std}
-            )
-
-            # Pad mean value to match the length of mean time series
-            mean_value_padded = np.repeat(mean_value, len(df))
-
-            # Add mean value column to DataFrame
-            df["Mean_Value"] = mean_value_padded
-
-            # Fill NaN values with 0
-            df.fillna(0, inplace=True)
-
-            #df.index = pd.to_datetime(df.index, unit="s")
-            # Modify timestamps to be streamed on live
-            #df.index = (now() + pd.to_timedelta(df.index, unit="s"))
-            df.index = now() - pd.to_timedelta(df.index, unit="s")
-            # Update output events
-            self.o.data = df
-            self.o.meta = meta
-
     def _send(self):
         """
         Processes all the data to compute the event-related potentials (ERPs) for each electrode.
@@ -240,13 +198,13 @@ class AccumulateEpochs(Node):
         if data is not None and data.size != 0:
             # Compute ERP for each electrode
             erp = np.mean(data, axis=0)
+            
             # Create DataFrame for ERPs with electrode labels as columns
             df = pd.DataFrame(data=erp, columns=self._electrodes)
 
-            # Modify timestamps to be streamed live
+            # Modify timestamps to match live streaming
             df.index = now() + pd.to_timedelta(df.index, unit="s")
 
             # Update output events
             self.o.data = df
             self.o.meta = meta
-
