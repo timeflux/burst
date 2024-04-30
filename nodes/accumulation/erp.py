@@ -11,17 +11,20 @@ IDLE = 0
 ACCUMULATING = 1
 
 
-class AccumulateEpochs(Node):
-    """Accumulates epochs into a DataFrame without double samples.
-    Output is a dataframe with three columns, containing the mean time series, standard deviation, and mean value.
+class ERP(Node):
+    """Accumulate epochs and compute the event-related potentials (ERPs) from epoched data.
+    Output is a DataFrame containing the ERP for each electrode.
     The size of the time series is determined by the length of epochs in the input data.
 
     Inputs are expected to be epoched data. Continuous data are handled but are not intended for this node.
     This node is best used after the Sample node from timeflux.epoch.
 
-    This node accumulate data and process all the accumulated epochs to deliver the output dataframe.
-    The processing consists of calculating the mean epochs (time series), standard deviation at each point, and mean value of the accumulated epochs.
-
+    The accumulation is triggered by the event_start_accumulation and stopped by the event_stop_accumulation. 
+    These events are expected to be the same as the ones used in Accumulation node in a classification pipeline.
+    
+    The input epochs are stacked if they match the target_label. 
+    The ERP is computed by averaging the epochs for each electrode.
+    
     Attributes:
         i (Port): Continuous data input, expects DataFrame.
         i_* (Port): Epoched data input, expects DataFrame.
@@ -29,13 +32,14 @@ class AccumulateEpochs(Node):
         o (Port): Accumulated and processed data output, provides DataFrame.
 
     Args:
-        meta_label (tuple): Tuple containing labels for epoch, context, and target.
-        event_start_accumulation (str): Event marking the start of accumulation.
-        event_stop_accumulation (str): Event marking the end of accumulation.
-        event_reset (str): Event triggering the reset of accumulation.
-        buffer_size (str): Buffer size for accumulation duration.
-        passthrough (bool): Flag indicating whether to pass data through without accumulation.
-
+        meta_label (tuple): Labels for different types of meta information. Defaults to ("epoch", "context", "target").
+        target_label (str): Label used to identify the target variable in the data. Defaults to "target".
+        event_start_accumulation (str): Label for indicating the start of accumulation. Defaults to "accumulation_starts".
+        event_stop_accumulation (str): Label for indicating the stop of accumulation. Defaults to "accumulation_stops".
+        event_reset (str): Label for indicating reset event. Defaults to "reset".
+        buffer_size (str): Size of the buffer. Defaults to 2 seconds.
+        passthrough (bool): Whether to pass data through without any transformation. Defaults to False.
+        verbose (bool): Whether to display verbose output. Defaults to False.
     """
 
     def __init__(
@@ -107,19 +111,20 @@ class AccumulateEpochs(Node):
                 self._accumulation_stop = matches.index.values[0]
                 if self.verbose:
                     self.logger.debug("Stop accumulation")
-                
+
         # Set the electrodes layout
         if self._electrodes is None:
-            if self._dimensions == 2:
-                if self.i.ready():
-                    self._electrodes = self.i.data.columns
-            elif self._dimensions == 3:
+            if self._dimensions == 3:
                 for _, _, port in self.iterate("i_*"):
-                    #Check if the port name is not i_events
+                    # Check if the port name is not i_events
                     if port != self.i_events:
                         if port.ready():
                             self._electrodes = port.data.columns.tolist()
                             break
+            else:
+                self.logger.warning(
+                    "Non epoched data found during accumulation. Ignoring."
+                )
 
         # Always buffer a few seconds, in case the start event is coming late
         if self._status == IDLE:
@@ -192,7 +197,7 @@ class AccumulateEpochs(Node):
             erp = np.mean(data, axis=0)
             # Create DataFrame for ERPs with electrode labels as columns
             df = pd.DataFrame(data=erp, columns=self._electrodes)
-            
+
             # Modify timestamps to match live streaming
             df.index = now() + pd.to_timedelta(df.index, unit="s")
 

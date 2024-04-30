@@ -8,7 +8,7 @@ graphs:
       params:
         prop: name
         value: {{ENOBIO_LSL_STREAM_NAME}}
-        channels: [{{ CHANNELS }}
+        channels: [{{ CHANNELS }}]
     - id: pub
       module: timeflux.nodes.zmq
       class: Pub

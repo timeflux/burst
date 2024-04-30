@@ -14,8 +14,8 @@ graphs:
       trigger: epoch
       length: {{ ERP_LENGTH }}
   - id: accumulate_epochs
-    module: nodes.accumulation.epochs_accumulation
-    class: AccumulateEpochs
+    module: nodes.accumulation.erp
+    class: ERP
     params:
       buffer_size: {{ ERP_BUFFER_SIZE }}
       verbose: {{ERP_VERBOSE}}

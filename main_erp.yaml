@@ -1,6 +1,7 @@
 import:
   # Device graph : sensor
-  - graphs/{{DEVICE}}.yaml
+  #- graphs/{{DEVICE}}.yaml
+  - graphs/hdf5_reader.yaml
   # Preprocessing graph
   - graphs/erp_plot/preprocessing.yaml
   # Classification graph
@@ -83,12 +84,12 @@ graphs:
       module: timeflux.nodes.zmq
       class: Sub
       params:
-        topics: [ filtered, predictions , events, erp,epochs_test]
+        topics: [ filtered, predictions , events, erp]
     - id: pubexpe
       module: timeflux.nodes.zmq
       class: Pub
       params:
-        topic: events
+        topic: events_UI
     edges:
     - source: uiexpe:events
       target: pubexpe
