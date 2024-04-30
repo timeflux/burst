@@ -41,18 +41,22 @@ class AccumulateEpochs(Node):
     def __init__(
         self,
         meta_label=("epoch", "context", "target"),
+        target_label="target",
         event_start_accumulation="accumulation_starts",
         event_stop_accumulation="accumulation_stops",
         event_reset="reset",
         buffer_size="2s",
         passthrough=False,
+        verbose=False,
     ):
         self.event_start_accumulation = event_start_accumulation
         self.event_stop_accumulation = event_stop_accumulation
         self.event_reset = event_reset
         self.meta_label = meta_label
+        self.target_label = target_label
         self.passthrough = passthrough
         self._buffer_size = pd.Timedelta(buffer_size)
+        self.verbose = verbose
         self._reset()
 
     def _reset(self):
@@ -95,12 +99,14 @@ class AccumulateEpochs(Node):
             if matches is not None:
                 self._accumulation_start = matches.index.values[0]
                 self._status = ACCUMULATING
-                self.logger.debug("Start accumulation")
+                if self.verbose:
+                    self.logger.debug("Start accumulation")
         if self._accumulation_stop is None:
             matches = match_events(self.i_events, self.event_stop_accumulation)
             if matches is not None:
                 self._accumulation_stop = matches.index.values[0]
-                self.logger.debug("Stop accumulation")
+                if self.verbose:
+                    self.logger.debug("Stop accumulation")
                 
         # Set the electrodes layout
         if self._electrodes is None:
@@ -109,9 +115,11 @@ class AccumulateEpochs(Node):
                     self._electrodes = self.i.data.columns
             elif self._dimensions == 3:
                 for _, _, port in self.iterate("i_*"):
-                    if port.ready():
-                        self._electrodes = port.data.columns
-                        break
+                    #Check if the port name is not i_events
+                    if port != self.i_events:
+                        if port.ready():
+                            self._electrodes = port.data.columns.tolist()
+                            break
 
         # Always buffer a few seconds, in case the start event is coming late
         if self._status == IDLE:
@@ -131,28 +139,10 @@ class AccumulateEpochs(Node):
 
     def _accumulate(self, start, stop):
         # Set defaults
-        if self.i.ready():
+        if self.i.ready() and self.verbose:
             self.logger.debug(f"Accumulating from {start} to {stop}")
             self.logger.debug(f"Dimensions: {self._dimensions}")
         indices = np.array([], dtype=np.datetime64)
-        # Accumulate continuous data
-        if self._dimensions == 2:
-            if self.i.ready():
-                data = self.i.data
-                mask = (data.index >= start) & (data.index < stop)
-                data = data[mask]
-                if not data.empty:
-                    if self._X is None:
-                        self._X = data.values
-                        self._shape = self._X.shape[1]
-                        indices = data.index.values
-                    else:
-                        if data.shape[1] == self._shape:
-                            self._X = np.vstack((self._X, data.values))
-                            indices = data.index.values
-                        else:
-                            self.logger.warning("Invalid shape")
-
         # Accumulate epoched data
         if self._dimensions == 3:
             for _, _, port in self.iterate("i_*"):
@@ -161,19 +151,21 @@ class AccumulateEpochs(Node):
                     if index >= start and index < stop:
                         data = port.data.values
                         label = get_meta(port, self.meta_label)
-                        
-                        if self._X is None:
-                            self._X = np.array([data])
-                            self._shape = self._X.shape[1:]
-                        else:
-                            self._X = np.vstack((self._X, [data]))
-                        indices = np.append(indices, index)
                         if label is not None:
-                            if self._y is None:
-                                self._y = np.array([label])
-                            else:
-                                self._y = np.append(self._y, [label])
-                            self.logger.debug(f"Labels: {self._y}")
+                            # Check if label is a target
+                            if label == self.target_label:
+                                if self._X is None:
+                                    self._X = np.array([data])
+                                    self._shape = self._X.shape[1:]
+                                else:
+                                    self._X = np.vstack((self._X, [data]))
+                                indices = np.append(indices, index)
+                                if self._y is None:
+                                    self._y = np.array([label])
+                                else:
+                                    self._y = np.append(self._y, [label])
+        else:
+            self.logger.warning("Non epoched data found during accumulation. Ignoring.")
 
         # Store indices
         if indices.size != 0:
@@ -198,10 +190,9 @@ class AccumulateEpochs(Node):
         if data is not None and data.size != 0:
             # Compute ERP for each electrode
             erp = np.mean(data, axis=0)
-            
             # Create DataFrame for ERPs with electrode labels as columns
             df = pd.DataFrame(data=erp, columns=self._electrodes)
-
+            
             # Modify timestamps to match live streaming
             df.index = now() + pd.to_timedelta(df.index, unit="s")
 

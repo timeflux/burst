@@ -1,0 +1,17 @@
+.center {
+    text-align: center;
+}
+
+#electrode-selector {
+    display: flex;  
+    flex-wrap: wrap;
+    justify-content: center;  
+}
+
+#electrode-selector input[type="checkbox"] {
+    margin-right: 10px;  
+}
+
+#electrode-selector label {
+    margin-right: 20px;  
+}

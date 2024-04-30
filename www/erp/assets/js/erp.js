@@ -6,8 +6,9 @@ class ERPClass {
         window.onbeforeunload = () => {
             this.io.event('session_ends');
         }
-
-        this.time = 0;
+        this.frequency = 500;
+        this.plot_container = 'plot-container';
+        this.electrodes_selector = 'electrode-selector';
 
         // Initialize scheduler
         this.scheduler = new Scheduler();
@@ -19,126 +20,59 @@ class ERPClass {
 
     initPlots() {
         // Initialize erp-plot with empty data
-        this.traces = [
-            {
-                x: [],
-                y: [],
-                mode: 'lines',
-                name: 'Mean Epoch'
-            },
-        ];
-
+        this.traces = [];
         this._electrodes = [];
 
-        Plotly.newPlot('erp-plot', this.traces);
+        Plotly.newPlot(this.plot_container, this.traces);
     }
 
-    plotData_std(data) {
-        // Get the length of the data
-        const length = Object.keys(data).length;
-    
-        // Initialize arrays to store the values
-        const meanTimeSeries = [];
-        const meanValue = data[0]['Mean_Value'];
-        const stdValue = [];
-    
-        // Iterate through each data point
-        for (let key in data) {
-            const element = data[key];
-            meanTimeSeries.push(element['Mean_Time_Series']);
-            stdValue.push(element['Standard_Deviation']);
-        }
-    
-        // Calculate the upper and lower bounds for the envelope
-        const upperBound = meanTimeSeries.map((value, index) => value + stdValue[index]);
-        const lowerBound = meanTimeSeries.map((value, index) => value - stdValue[index]);
-    
-        // Plot the data
-        const traces = [
-            {
-                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
-                y: meanTimeSeries,
-                mode: 'lines',
-                name: 'Mean Epoch'
-            },
-            {
-                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
-                y: upperBound,
-                fill: 'tonexty', // Fill the area between upper and lower bounds
-                mode: 'none', // No line for the envelope
-                name: 'Mean + Std'
-            },
-            {
-                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
-                y: lowerBound,
-                fill: 'tonexty', 
-                mode: 'none',
-                name: 'Mean - Std'
-            }
-        ];
+    initElectrodes(data) {
+        const firstEntry = Object.values(data)[0];
+        const electrodeNames = Object.keys(firstEntry);
 
-
-        const layout = {
-            xaxis: {
-                title: 'Time step'
-            },
-            yaxis: {
-                title: 'Amplitude'
-            }
-        };
-    
-        Plotly.newPlot('erp-plot', traces, layout);
+        this._electrodes = electrodeNames;
+        this.selected_electrodes = [...electrodeNames];
     }
 
-    plotData_obsolete(data) {
-        // Get the length of the data
-        const length = Object.keys(data).length;
+    initElectrodeSelector() {
+        // Create checkboxes for electrode selection
+        const electrodeSelector = document.getElementById(this.electrodes_selector);
+        for (let electrode of this._electrodes) {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = electrode;
+            checkbox.value = electrode;
+            checkbox.checked = true; // Check all checkboxes by default
+            checkbox.addEventListener('change', () => this.updateSelectedElectrodes());
     
-        // Initialize arrays to store the values
-        const meanTimeSeries = [];
-
-        // Iterate through each data point
-        for (let key in data) {
-            const element = data[key];
-            meanTimeSeries.push(element['Mean_Time_Series']);
+            const label = document.createElement('label');
+            label.htmlFor = electrode;
+            label.appendChild(document.createTextNode(electrode));
+    
+            electrodeSelector.appendChild(checkbox);
+            electrodeSelector.appendChild(label);
+            electrodeSelector.appendChild(document.createElement('br'));
         }
-    
-        // Plot the data
-        const traces = [
-            {
-                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
-                y: meanTimeSeries,
-                mode: 'lines',
-                name: 'Mean Epoch'
-            }
-        ];
-
-        const layout = {
-            xaxis: {
-                title: 'Time step'
-            },
-            yaxis: {
-                title: 'Amplitude'
-            }
-        };
-    
-        Plotly.newPlot('erp-plot', traces, layout);
     }
 
     plotData(data) {
-        // Get the length of the data
-        const length = Object.keys(data).length;
+        // Check if selected electrodes are initialized
+        if (!this.selected_electrodes) {
+            return; // Do nothing if not 
+        }
     
         // Initialize arrays to store the values for each electrode
         const traces = [];
-        for (let electrode of this._electrodes) {
+        for (let electrode of this.selected_electrodes) {
             const meanTimeSeries = [];
+            const x_time = [];
             for (let key in data) {
                 const element = data[key];
+                x_time.push(key)
                 meanTimeSeries.push(element[electrode]);
             }
             traces.push({
-                x: Array.from({length}, (_, i) => i), // Create an array of indices from 0 to (length - 1)
+                x: x_time.map((value, index) => (value - x_time[0])/this.frequency),
                 y: meanTimeSeries,
                 mode: 'lines',
                 name: electrode
@@ -147,55 +81,27 @@ class ERPClass {
         
         const layout = {
             xaxis: {
-                title: 'Time step'
+                title: 'Time (ms)'
             },
             yaxis: {
                 title: 'Amplitude'
             }
         };
 
-        Plotly.newPlot('erp-plot', traces, layout);
+        Plotly.newPlot(this.plot_container, traces, layout);
     }
 
-    electrode_update(data) {
-        const firstEntry = Object.values(data)[0];
-        const electrodeNames = Object.keys(firstEntry);
-
-        this._electrodes = electrodeNames;
+    updateSelectedElectrodes() {
+        const selectedElectrodes = [];
+        const checkboxes = document.querySelectorAll('#electrode-selector input[type="checkbox"]');
+        for (let checkbox of checkboxes) {
+            if (checkbox.checked) {
+                selectedElectrodes.push(checkbox.value);
+            }
+        }
+        this.selected_electrodes = selectedElectrodes;
     }
     
-
-}
-
-function exploreObject(obj) {
-    // Check if the object is an array
-    if (Array.isArray(obj)) {
-        console.log("Object is an array");
-        // Iterate over the array elements
-        obj.forEach(element => {
-            exploreObject(element); // Recursively explore nested elements
-        });
-    } else if (typeof obj === 'object' && obj !== null) {
-        console.log("Object is a non-null object");
-        // Iterate over the object keys
-        for (let key in obj) {
-            console.log(`${key}:`);
-            exploreObject(obj[key]); // Recursively explore nested objects
-        }
-    } else {
-        console.log("Object is a primitive value or null");
-        console.log(obj);
-    }
-}
-
-function checkDataShape(data) {
-    const columns = Object.keys(data);
-    const numberOfRows = data[columns[0]].length; // Assuming the first column has the same length for all rows
-    const numberOfColumns = columns.length;
-
-    console.log("Number of rows:", numberOfRows);
-    console.log("Number of columns:", numberOfColumns);
-    console.log("Data shape")
 }
 
 // Load settings and initialize ERPClass
@@ -209,10 +115,11 @@ load_settings().then(async settings => {
     // Listen for 'erp' data and plot it immediately
     ERP.io.on('erp', (data, meta) => {
         if (ERP._electrodes.length === 0) {
-            ERP.electrode_update(data);
+            // Initialize electrodes
+            ERP.initElectrodes(data);
+            // Initialize electrode selector
+            ERP.initElectrodeSelector();
         }
-        //console.log(data);
-        //console.log(ERP._electrodes);
         ERP.plotData(data);
     });
 });
