@@ -15,10 +15,13 @@ class ERPClass {
         this.frequency = 500;
         this.plot_container = 'plot-container';
         this.electrodes_selector = 'electrode-selector';
+        this.normalizeData = false;
 
         // Initialize plots
         this.initPlots();
 
+        // Initialize normalize checkbox
+        this.initNormalizeCheckbox();
     }
 
     initPlots() {
@@ -60,6 +63,26 @@ class ERPClass {
         }
     }
 
+    initNormalizeCheckbox() {
+        const container = document.getElementById('normalize-container'); // Change this to the ID of the container where you want to append the checkbox
+        const normalizeCheckbox = document.createElement('input');
+        normalizeCheckbox.type = 'checkbox';
+        normalizeCheckbox.id = 'normalize-checkbox';
+        normalizeCheckbox.checked = this.normalizeData; // Set initial state based on this.normalizeData
+        normalizeCheckbox.addEventListener('change', () => this.updateNormalizeState());
+    
+        const label = document.createElement('label');
+        label.htmlFor = 'normalize-checkbox';
+        label.textContent = 'Normalize Data';
+    
+        container.appendChild(normalizeCheckbox);
+        container.appendChild(label);
+    }
+
+    updateNormalizeState() {
+        this.normalizeData = document.getElementById('normalize-checkbox').checked;
+    }
+
     plotData(data) {
         // Plot the data for the selected electrodes
         // Check if selected electrodes are initialized
@@ -77,12 +100,34 @@ class ERPClass {
                 x_time.push(key)
                 meanTimeSeries.push(element[electrode]);
             }
-            traces.push({
-                x: x_time.map((value, index) => (value - x_time[0]) / this.frequency),
-                y: meanTimeSeries,
-                mode: 'lines',
-                name: electrode
-            });
+
+            // Calculate global maximum and minimum values across all electrodes and time points
+            let allValues = [];
+            for (let electrode of this.selected_electrodes) {
+                for (let key in data) {
+                    allValues.push(data[key][electrode]);
+                }
+            }
+            const globalMax = Math.max(...allValues);
+            const globalMin = Math.min(...allValues);
+
+            // Normalize using global maximum and minimum
+            if (this.normalizeData) {
+                const normalizedMeanTimeSeries = meanTimeSeries.map(value => (value - globalMin) / (globalMax - globalMin));
+                traces.push({
+                    x: x_time.map((value, index) => (value - x_time[0]) / this.frequency),
+                    y: normalizedMeanTimeSeries,
+                    mode: 'lines',
+                    name: electrode
+                });
+            } else {
+                traces.push({
+                    x: x_time.map((value, index) => (value - x_time[0]) / this.frequency),
+                    y: meanTimeSeries,
+                    mode: 'lines',
+                    name: electrode
+                });
+            }
         }
 
         const layout = {

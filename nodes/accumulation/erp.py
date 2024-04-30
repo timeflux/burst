@@ -46,6 +46,7 @@ class ERP(Node):
         self,
         meta_label=("epoch", "context", "target"),
         target_label="target",
+        non_target_label="non_target",
         event_start_accumulation="accumulation_starts",
         event_stop_accumulation="accumulation_stops",
         event_reset="reset",
@@ -58,6 +59,7 @@ class ERP(Node):
         self.event_reset = event_reset
         self.meta_label = meta_label
         self.target_label = target_label
+        self.non_target_label = non_target_label
         self.passthrough = passthrough
         self._buffer_size = pd.Timedelta(buffer_size)
         self.verbose = verbose
@@ -65,9 +67,11 @@ class ERP(Node):
 
     def _reset(self):
         self._status = IDLE
-        self._X = None
+        self._X_target = None
+        self._X_non_target = None
         self._y = None
         self._X_indices = np.array([], dtype=np.datetime64)
+        self._X_indices_non_target = np.array([], dtype=np.datetime64)
         self._X_meta = None
         self._shape = None
         self._dimensions = None
@@ -147,7 +151,8 @@ class ERP(Node):
         if self.i.ready() and self.verbose:
             self.logger.debug(f"Accumulating from {start} to {stop}")
             self.logger.debug(f"Dimensions: {self._dimensions}")
-        indices = np.array([], dtype=np.datetime64)
+        indices_target = np.array([], dtype=np.datetime64)
+        indices_non_target = np.array([], dtype=np.datetime64)
         # Accumulate epoched data
         if self._dimensions == 3:
             for _, _, port in self.iterate("i_*"):
@@ -159,30 +164,41 @@ class ERP(Node):
                         if label is not None:
                             # Check if label is a target
                             if label == self.target_label:
-                                if self._X is None:
-                                    self._X = np.array([data])
-                                    self._shape = self._X.shape[1:]
+                                if self._X_target is None:
+                                    self._X_target = np.array([data])
+                                    self._shape = self._X_target.shape[1:]
                                 else:
-                                    self._X = np.vstack((self._X, [data]))
-                                indices = np.append(indices, index)
+                                    self._X_target = np.vstack((self._X_target, [data]))
+                                indices_target = np.append(indices_target, index)
                                 if self._y is None:
                                     self._y = np.array([label])
                                 else:
                                     self._y = np.append(self._y, [label])
+                            elif label == self.non_target_label:
+                                if self._X_non_target is None:
+                                    self._X_non_target = np.array([data])
+                                else:
+                                    self._X_non_target = np.vstack((self._X_non_target, [data]))
+                                indices_non_target = np.append(indices_non_target, index)
         else:
             self.logger.warning("Non epoched data found during accumulation. Ignoring.")
 
-        # Store indices
-        if indices.size != 0:
-            self._X_indices = np.append(self._X_indices, indices)
+        # Store indices_target
+        if indices_target.size != 0:
+            self._X_indices = np.append(self._X_indices, indices_target)
+        if indices_non_target.size != 0:
+            self._X_indices_non_target = np.append(self._X_indices_non_target, indices_non_target)
 
         # Trim
-        if self._X is not None:
+        if self._X_target is not None:
             mask = (self._X_indices >= start) & (self._X_indices < stop)
-            self._X = self._X[mask]
+            self._X_target = self._X_target[mask]
             self._X_indices = self._X_indices[mask]
             if self._y is not None:
                 self._y = self._y[mask]
+        if self._X_non_target is not None:
+            mask = (self._X_indices_non_target >= start) & (self._X_indices_non_target < stop)
+            self._X_non_target = self._X_non_target[mask]
 
     def _send(self):
         """
@@ -190,13 +206,16 @@ class ERP(Node):
         Sends the dataframe containing the ERP for each electrode on the default port.
         """
         meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
-        data = self._X
+        data = self._X_target
+        data_non_target = self._X_non_target
 
-        if data is not None and data.size != 0:
+        if data is not None and data.size != 0 and data_non_target is not None and data_non_target.size != 0:
             # Compute ERP for each electrode
-            erp = np.mean(data, axis=0)
+            erp_target = np.mean(data, axis=0)
+            erp_non_target = np.mean(data_non_target, axis=0)
             # Create DataFrame for ERPs with electrode labels as columns
-            df = pd.DataFrame(data=erp, columns=self._electrodes)
+            #df = pd.DataFrame(data=erp_target - erp_non_target, columns=self._electrodes)
+            df = pd.DataFrame(data=erp_target, columns=self._electrodes)
 
             # Modify timestamps to match live streaming
             df.index = now() + pd.to_timedelta(df.index, unit="s")

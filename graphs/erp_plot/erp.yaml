@@ -21,6 +21,7 @@ graphs:
       verbose: {{ERP_VERBOSE}}
       meta_label: [epoch, context, bit]
       target_label: 1
+      non_target_label : 0
       event_start_accumulation: calibration_begins
       event_stop_accumulation: calibration_ends
   - id: pub_erp
