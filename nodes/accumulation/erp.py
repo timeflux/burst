@@ -214,12 +214,15 @@ class ERP(Node):
             erp_target = np.mean(data, axis=0)
             erp_non_target = np.mean(data_non_target, axis=0)
             # Create DataFrame for ERPs with electrode labels as columns
-            #df = pd.DataFrame(data=erp_target - erp_non_target, columns=self._electrodes)
+            df_non_target = pd.DataFrame(data=erp_non_target, columns=self._electrodes)
             df = pd.DataFrame(data=erp_target, columns=self._electrodes)
 
             # Modify timestamps to match live streaming
             df.index = now() + pd.to_timedelta(df.index, unit="s")
-
+            df_non_target.index = now() + pd.to_timedelta(df_non_target.index, unit="s")
+            
             # Update output events
             self.o.data = df
+            self.o_non_target.data = df_non_target
+            self.o_non_target.meta = meta
             self.o.meta = meta

@@ -29,6 +29,11 @@ graphs:
     class: Pub
     params:
       topic: erp
+  - id: pub_erp_non_target
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: erp_non_target
   edges:
     - source: sub:filtered
       target: epoch_erp
@@ -40,4 +45,6 @@ graphs:
       target: accumulate_epochs
     - source: accumulate_epochs
       target: pub_erp
+    - source: accumulate_epochs:non_target
+      target: pub_erp_non_target
   rate: 10

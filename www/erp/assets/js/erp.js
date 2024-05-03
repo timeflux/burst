@@ -11,25 +11,28 @@ class ERPClass {
         this.scheduler = new Scheduler();
         this.scheduler.start();
 
-        // Initialize class constants
+        // Initialize class constants and variables
         this.frequency = 500;
-        this.plot_container = 'plot-container';
+        this.plot_target = 'plot-container';
+        this.plot_non_target = 'plot-non-container';
         this.electrodes_selector = 'electrode-selector';
         this.normalizeData = false;
+        this.showNonTarget = false;
+        this._electrodes = [];
 
         // Initialize plots
         this.initPlots();
 
         // Initialize normalize checkbox
         this.initNormalizeCheckbox();
+        this.initNonTargetCheckbox();
     }
 
     initPlots() {
         // Initialize erp-plot with empty data
         this.traces = [];
-        this._electrodes = [];
 
-        Plotly.newPlot(this.plot_container, this.traces);
+        Plotly.newPlot(this.plot_target, this.traces);
     }
 
     initElectrodes(data) {
@@ -64,7 +67,7 @@ class ERPClass {
     }
 
     initNormalizeCheckbox() {
-        const container = document.getElementById('normalize-container'); // Change this to the ID of the container where you want to append the checkbox
+        const container = document.getElementById('options-container'); // Change this to the ID of the container where you want to append the checkbox
         const normalizeCheckbox = document.createElement('input');
         normalizeCheckbox.type = 'checkbox';
         normalizeCheckbox.id = 'normalize-checkbox';
@@ -83,7 +86,27 @@ class ERPClass {
         this.normalizeData = document.getElementById('normalize-checkbox').checked;
     }
 
-    plotData(data) {
+    initNonTargetCheckbox() {
+        const container = document.getElementById('options-container'); 
+        const nonTargetCheckbox = document.createElement('input');
+        nonTargetCheckbox.type = 'checkbox';
+        nonTargetCheckbox.id = 'non-target-checkbox';
+        nonTargetCheckbox.checked = this.showNonTarget; 
+        nonTargetCheckbox.addEventListener('change', () => this.updateNonTargetState());
+    
+        const label = document.createElement('label');
+        label.htmlFor = 'non-target-checkbox';
+        label.textContent = 'Show Non Target ERP Plot';
+    
+        container.appendChild(nonTargetCheckbox);
+        container.appendChild(label);
+    }
+
+    updateNonTargetState() {
+        this.showNonTarget = document.getElementById('non-target-checkbox').checked;
+    }
+
+    plotData(data,container) {
         // Plot the data for the selected electrodes
         // Check if selected electrodes are initialized
         if (!this.selected_electrodes) {
@@ -130,16 +153,24 @@ class ERPClass {
             }
         }
 
+        let title;
+        if (container === this.plot_target) {
+            title = 'Target ERP Plot';
+        } else if (container === this.plot_non_target) {
+            title = 'Non Target ERP Plot';
+        }
+
         const layout = {
             xaxis: {
                 title: 'Time (ms)'
             },
             yaxis: {
                 title: 'Amplitude'
-            }
+            },
+            title: title 
         };
 
-        Plotly.newPlot(this.plot_container, traces, layout);
+        Plotly.newPlot(container, traces, layout);
     }
 
     updateSelectedElectrodes() {
@@ -163,6 +194,7 @@ load_settings().then(async settings => {
 
     // Subscribe to 'erp' data
     ERP.io.subscribe('erp');
+    ERP.io.subscribe('erp_non_target');
 
     // Listen for 'erp' 
     ERP.io.on('erp', (data, meta) => {
@@ -172,6 +204,22 @@ load_settings().then(async settings => {
             ERP.initElectrodeSelector();
         }
         // Plot the data
-        ERP.plotData(data);
+        ERP.plotData(data, ERP.plot_target);
+    });
+
+    // Listen for 'erp_non_target'
+    ERP.io.on('erp_non_target', (data, meta) => {
+        // Check if electrodes and selection are initialized : if not, initialize them
+        if (ERP._electrodes.length === 0) {
+            ERP.initElectrodes(data);
+            ERP.initElectrodeSelector();
+        }
+        // Plot the data
+        if (ERP.showNonTarget == true) {
+            ERP.plotData(data, ERP.plot_non_target);
+        }
+        else {
+            Plotly.purge(ERP.plot_non_target)
+        }
     });
 });

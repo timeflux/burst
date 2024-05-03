@@ -2,7 +2,12 @@
     text-align: center;
 }
 
-#normalize-container {
+.plot-container {
+    width: 80%; 
+    margin: 0 auto; 
+}
+
+#options-container {
     display: flex;  
     flex-wrap: wrap;
     justify-content: center; 
