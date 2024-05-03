@@ -7,6 +7,9 @@ graphs:
       class: Sub
       params:
         topics: [raw]
+    - id: rereference
+      module: nodes.rereference
+      class: Mean
     - id: notch
       module: timeflux_dsp.nodes.filters
       class: IIRFilter
@@ -28,6 +31,8 @@ graphs:
         topic: filtered
   edges:
       - source: sub:raw
+        target: rereference
+      - source: rereference
         target: notch
       - source: notch
         target: bandpass
