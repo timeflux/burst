@@ -205,24 +205,27 @@ class ERP(Node):
         Processes all the data to compute the event-related potentials (ERPs) for each electrode.
         Sends the dataframe containing the ERP for each electrode on the default port.
         """
-        meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
-        data = self._X_target
-        data_non_target = self._X_non_target
+        try:
+            meta = self._X_meta if self._dimensions == 2 else {"epochs": self._X_meta}
+            data = self._X_target
+            data_non_target = self._X_non_target
 
-        if data is not None and data.size != 0 and data_non_target is not None and data_non_target.size != 0:
-            # Compute ERP for each electrode
-            erp_target = np.mean(data, axis=0)
-            erp_non_target = np.mean(data_non_target, axis=0)
-            # Create DataFrame for ERPs with electrode labels as columns
-            df_non_target = pd.DataFrame(data=erp_non_target, columns=self._electrodes)
-            df = pd.DataFrame(data=erp_target, columns=self._electrodes)
+            if data is not None and data.size != 0 and data_non_target is not None and data_non_target.size != 0:
+                # Compute ERP for each electrode
+                erp_target = np.mean(data, axis=0)
+                erp_non_target = np.mean(data_non_target, axis=0)
+                # Create DataFrame for ERPs with electrode labels as columns
+                df_non_target = pd.DataFrame(data=erp_non_target, columns=self._electrodes)
+                df = pd.DataFrame(data=erp_target, columns=self._electrodes)
 
-            # Modify timestamps to match live streaming
-            df.index = now() + pd.to_timedelta(df.index, unit="s")
-            df_non_target.index = now() + pd.to_timedelta(df_non_target.index, unit="s")
-            
-            # Update output events
-            self.o.data = df
-            self.o_non_target.data = df_non_target
-            self.o_non_target.meta = meta
-            self.o.meta = meta
+                # Modify timestamps to match live streaming
+                df.index = now() + pd.to_timedelta(df.index, unit="s")
+                df_non_target.index = now() + pd.to_timedelta(df_non_target.index, unit="s")
+                
+                # Update output events
+                self.o.data = df
+                self.o_non_target.data = df_non_target
+                self.o_non_target.meta = meta
+                self.o.meta = meta
+        except Exception as e:
+            self.logger.error(f"Error sending data: {e}")

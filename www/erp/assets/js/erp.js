@@ -1,6 +1,6 @@
 class ERPClass {
     constructor() {
-        // Initialize events
+        // Initialize events using inherited IO class from timeflux.js
         this.io = new IO();
         this.io.on('connect', () => this.io.event('session_begins', this.options));
         window.onbeforeunload = () => {
@@ -11,7 +11,7 @@ class ERPClass {
         this.scheduler = new Scheduler();
         this.scheduler.start();
 
-        // Initialize class constants and variables
+        // Initialize class constants and variables with default values
         this.frequency = 500;
         this.plot_target = 'plot-container';
         this.plot_non_target = 'plot-non-container';
@@ -20,19 +20,9 @@ class ERPClass {
         this.showNonTarget = false;
         this._electrodes = [];
 
-        // Initialize plots
-        this.initPlots();
-
         // Initialize normalize checkbox
         this.initNormalizeCheckbox();
         this.initNonTargetCheckbox();
-    }
-
-    initPlots() {
-        // Initialize erp-plot with empty data
-        this.traces = [];
-
-        Plotly.newPlot(this.plot_target, this.traces);
     }
 
     initElectrodes(data) {
@@ -67,6 +57,7 @@ class ERPClass {
     }
 
     initNormalizeCheckbox() {
+        // Initialize the checkbox for normalizing the data
         const container = document.getElementById('options-container'); // Change this to the ID of the container where you want to append the checkbox
         const normalizeCheckbox = document.createElement('input');
         normalizeCheckbox.type = 'checkbox';
@@ -82,11 +73,10 @@ class ERPClass {
         container.appendChild(label);
     }
 
-    updateNormalizeState() {
-        this.normalizeData = document.getElementById('normalize-checkbox').checked;
-    }
+
 
     initNonTargetCheckbox() {
+        // Initialize the checkbox for showing the non target ERP plot
         const container = document.getElementById('options-container'); 
         const nonTargetCheckbox = document.createElement('input');
         nonTargetCheckbox.type = 'checkbox';
@@ -100,10 +90,6 @@ class ERPClass {
     
         container.appendChild(nonTargetCheckbox);
         container.appendChild(label);
-    }
-
-    updateNonTargetState() {
-        this.showNonTarget = document.getElementById('non-target-checkbox').checked;
     }
 
     plotData(data,container) {
@@ -131,11 +117,11 @@ class ERPClass {
                     allValues.push(data[key][electrode]);
                 }
             }
-            const globalMax = Math.max(...allValues);
-            const globalMin = Math.min(...allValues);
 
             // Normalize using global maximum and minimum
             if (this.normalizeData) {
+                const globalMax = Math.max(...allValues);
+                const globalMin = Math.min(...allValues);
                 const normalizedMeanTimeSeries = meanTimeSeries.map(value => (value - globalMin) / (globalMax - globalMin));
                 traces.push({
                     x: x_time.map((value, index) => (value - x_time[0]) / this.frequency),
@@ -185,6 +171,14 @@ class ERPClass {
         this.selected_electrodes = selectedElectrodes;
     }
 
+    updateNonTargetState() {
+        this.showNonTarget = document.getElementById('non-target-checkbox').checked;
+    }
+
+    updateNormalizeState() {
+        this.normalizeData = document.getElementById('normalize-checkbox').checked;
+    }
+
 }
 
 // Load settings and initialize ERPClass
@@ -214,7 +208,7 @@ load_settings().then(async settings => {
             ERP.initElectrodes(data);
             ERP.initElectrodeSelector();
         }
-        // Plot the data
+        // Plot the data if non target asked : if not, clear the plot
         if (ERP.showNonTarget == true) {
             ERP.plotData(data, ERP.plot_non_target);
         }
