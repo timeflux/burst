@@ -24,6 +24,7 @@ graphs:
       non_target_label : 0
       event_start_accumulation: calibration_begins
       event_stop_accumulation: calibration_ends
+      sliding_window: {{ERP_SLIDING_WINDOW}}
   - id: pub_erp
     module: timeflux.nodes.zmq
     class: Pub
@@ -34,6 +35,11 @@ graphs:
     class: Pub
     params:
       topic: erp_non_target
+  - id: pub_erp_sliding
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: erp_sliding
   edges:
     - source: sub:filtered
       target: epoch_erp
@@ -47,4 +53,6 @@ graphs:
       target: pub_erp
     - source: accumulate_epochs:non_target
       target: pub_erp_non_target
+    - source: accumulate_epochs:sliding
+      target: pub_erp_sliding
   rate: 10

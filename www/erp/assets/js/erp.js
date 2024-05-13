@@ -15,14 +15,17 @@ class ERPClass {
         this.frequency = 500;
         this.plot_target = 'plot-container';
         this.plot_non_target = 'plot-non-container';
+        this.plot_sliding = 'plot-sliding-container';
         this.electrodes_selector = 'electrode-selector';
         this.normalizeData = false;
         this.showNonTarget = false;
         this._electrodes = [];
+        this.event_accumulation_stop = "calibration_ends";
 
         // Initialize normalize checkbox
         this.initNormalizeCheckbox();
         this.initNonTargetCheckbox();
+        this.initSlidingCheckbox();
     }
 
     initElectrodes(data) {
@@ -73,8 +76,6 @@ class ERPClass {
         container.appendChild(label);
     }
 
-
-
     initNonTargetCheckbox() {
         // Initialize the checkbox for showing the non target ERP plot
         const container = document.getElementById('options-container'); 
@@ -89,6 +90,23 @@ class ERPClass {
         label.textContent = 'Show Non Target ERP Plot';
     
         container.appendChild(nonTargetCheckbox);
+        container.appendChild(label);
+    }
+
+    initSlidingCheckbox() {
+        // Initialize the checkbox for showing the sliding ERP plot
+        const container = document.getElementById('options-container');
+        const slidingCheckbox = document.createElement('input');
+        slidingCheckbox.type = 'checkbox';
+        slidingCheckbox.id = 'sliding-checkbox';
+        slidingCheckbox.checked = this.showSliding;
+        slidingCheckbox.addEventListener('change', () => this.updateSlidingState());
+
+        const label = document.createElement('label');
+        label.htmlFor = 'sliding-checkbox';
+        label.textContent = 'Show Sliding Mean ERP Plot';
+
+        container.appendChild(slidingCheckbox);
         container.appendChild(label);
     }
 
@@ -144,6 +162,8 @@ class ERPClass {
             title = 'Target ERP Plot';
         } else if (container === this.plot_non_target) {
             title = 'Non Target ERP Plot';
+        } else if (container === this.plot_sliding) {
+            title = 'Sliding Mean ERP Plot';
         }
 
         const layout = {
@@ -157,6 +177,7 @@ class ERPClass {
         };
 
         Plotly.newPlot(container, traces, layout);
+        return traces;
     }
 
     updateSelectedElectrodes() {
@@ -179,6 +200,40 @@ class ERPClass {
         this.normalizeData = document.getElementById('normalize-checkbox').checked;
     }
 
+    updateSlidingState() {
+        this.showSliding = document.getElementById('sliding-checkbox').checked;
+    }
+
+}
+
+function exportTracesToCSV(traces) {
+    // Create a CSV string
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    // Add headers
+    csvContent += "x,y\n";
+
+    // Add data from each trace
+    traces.forEach((trace, index) => {
+        trace.x.forEach((xValue, i) => {
+            csvContent += `${xValue},${trace.y[i]}\n`;
+        });
+    });
+
+    // Create a Blob object from the CSV string
+    const blob = new Blob([csvContent], { type: "text/csv" });
+
+    // Create a link element to download the CSV file
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "traces.csv";
+
+    // Append the link to the body and trigger the click event
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
 }
 
 // Load settings and initialize ERPClass
@@ -189,6 +244,8 @@ load_settings().then(async settings => {
     // Subscribe to 'erp' data
     ERP.io.subscribe('erp');
     ERP.io.subscribe('erp_non_target');
+    ERP.io.subscribe('events_hdf5');
+    ERP.io.subscribe('erp_sliding')
 
     // Listen for 'erp' 
     ERP.io.on('erp', (data, meta) => {
@@ -198,7 +255,7 @@ load_settings().then(async settings => {
             ERP.initElectrodeSelector();
         }
         // Plot the data
-        ERP.plotData(data, ERP.plot_target);
+        ERP.traces = ERP.plotData(data, ERP.plot_target);
     });
 
     // Listen for 'erp_non_target'
@@ -216,4 +273,30 @@ load_settings().then(async settings => {
             Plotly.purge(ERP.plot_non_target)
         }
     });
+
+    ERP.io.on('erp_sliding', (data, meta) => {
+        // Check if electrodes and selection are initialized : if not, initialize them
+        if (ERP._electrodes.length === 0) {
+            ERP.initElectrodes(data);
+            ERP.initElectrodeSelector();
+        }
+        // Plot the data if non target asked : if not, clear the plot
+        if (ERP.showSliding == true) {
+            ERP.plotData(data, ERP.plot_sliding);
+        }
+        else {
+            Plotly.purge(ERP.plot_sliding)
+        }
+    });
+
+    ERP.io.on('events_hdf5', (data, meta) => {
+        const timestamps = Object.keys(data); // Get all timestamps
+        const firstTimestamp = timestamps[0]; // Get the first timestamp
+        const firstEventData = data[firstTimestamp]; // Get the event data at the first timestamp
+        const label = firstEventData.label; // Get the label value of the first event
+        if (label === ERP.event_accumulation_stop) {
+            // Export traces to CSV
+            console.log('Exporting traces to CSV...');
+            exportTracesToCSV(ERP.traces);
+    }});
 });

@@ -38,6 +38,7 @@ class ERP(Node):
         event_stop_accumulation (str): Label for indicating the stop of accumulation. Defaults to "accumulation_stops".
         event_reset (str): Label for indicating reset event. Defaults to "reset".
         buffer_size (str): Size of the buffer. Defaults to 2 seconds.
+        sliding_window (int): Size of the sliding window in number of samples. Defaults to 100.
         passthrough (bool): Whether to pass data through without any transformation. Defaults to False.
         verbose (bool): Whether to display verbose output. Defaults to False.
     """
@@ -51,6 +52,7 @@ class ERP(Node):
         event_stop_accumulation="accumulation_stops",
         event_reset="reset",
         buffer_size="2s",
+        sliding_window=100,
         passthrough=False,
         verbose=False,
     ):
@@ -62,6 +64,7 @@ class ERP(Node):
         self.non_target_label = non_target_label
         self.passthrough = passthrough
         self._buffer_size = pd.Timedelta(buffer_size)
+        self._sliding_window = sliding_window
         self.verbose = verbose
         self._reset()
 
@@ -212,20 +215,26 @@ class ERP(Node):
 
             if data is not None and data.size != 0 and data_non_target is not None and data_non_target.size != 0:
                 # Compute ERP for each electrode
+                self.logger.debug(f"Computing ERP for {data.shape[0]} epochs")
                 erp_target = np.mean(data, axis=0)
                 erp_non_target = np.mean(data_non_target, axis=0)
+                erp_sliding = np.mean(data[-self._sliding_window:], axis=0)
                 # Create DataFrame for ERPs with electrode labels as columns
                 df_non_target = pd.DataFrame(data=erp_non_target, columns=self._electrodes)
                 df = pd.DataFrame(data=erp_target, columns=self._electrodes)
-
+                df_sliding = pd.DataFrame(data=erp_sliding, columns=self._electrodes)
+                
                 # Modify timestamps to match live streaming
                 df.index = now() + pd.to_timedelta(df.index, unit="s")
                 df_non_target.index = now() + pd.to_timedelta(df_non_target.index, unit="s")
+                df_sliding.index = now() + pd.to_timedelta(df_sliding.index, unit="s")             
                 
                 # Update output events
                 self.o.data = df
                 self.o_non_target.data = df_non_target
-                self.o_non_target.meta = meta
+                self.o_sliding.data = df_sliding
                 self.o.meta = meta
+                self.o_non_target.meta = meta
+                self.o_sliding.meta = meta
         except Exception as e:
             self.logger.error(f"Error sending data: {e}")

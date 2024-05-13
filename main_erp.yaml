@@ -84,7 +84,7 @@ graphs:
       module: timeflux.nodes.zmq
       class: Sub
       params:
-        topics: [ filtered, predictions , events, erp, erp_non_target]
+        topics: [ filtered, predictions , events, erp, erp_non_target, erp_sliding]
     - id: pubexpe
       module: timeflux.nodes.zmq
       class: Pub
@@ -99,6 +99,8 @@ graphs:
       target: uiexpe:eeg
     - source: sub:erp_non_target
       target: uiexpe:erp_non_target
+    - source: sub:erp_sliding
+      target: uiexpe:erp_sliding
     - source: sub:predictions
       target: uiexpe:predictions
     rate: 20
