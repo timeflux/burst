@@ -135,24 +135,51 @@ if len(bad_codes) > 0:
         True,
     )
 
-# Check positive non zero
-os.environ["NUMBER_OF_CLASSES"] = os.getenv("NUMBER_OF_CLASSES")
-if not check_int("NUMBER_OF_CLASSES") or int(os.environ["NUMBER_OF_CLASSES"]) <= 0:
+
+if os.environ["TASK_LAYOUT"] == "simple":
+    os.environ["TASK_NUMBER_OF_CLASSES"] = os.getenv("TASK_NUMBER_OF_CLASSES")
+    if not check_int("TASK_NUMBER_OF_CLASSES") or int(os.environ["TASK_NUMBER_OF_CLASSES"]) <= 0:
+        error_handling(
+            "TASK_NUMBER_OF_CLASSES", f"TASK_NUMBER_OF_CLASSES must be a strictly positive integer", 2
+        )
+elif os.environ["TASK_LAYOUT"] == "keyboard":
+    os.environ["TASK_NUMBER_OF_CLASSES"] = "11"
+elif os.environ["TASK_LAYOUT"] == "grid":
+    os.environ["TASK_NUMBER_OF_CLASSES"] = "9"
+
+if int(os.environ["TASK_NUMBER_OF_CLASSES"]) > len(codes):
     error_handling(
-        "NUMBER_OF_CLASSES", f"NUMBER_OF_CLASSES must be a strictly positive integer", 2
-    )
-if int(os.environ["NUMBER_OF_CLASSES"]) > len(codes):
-    error_handling(
-        "NUMBER_OF_CLASSES",
+        "TASK_NUMBER_OF_CLASSES",
         f"Not enough codes {len(codes)} for the specified number of classes",
         len(codes),
     )
-
-codes = " ".join(
-    ["".join(list(map(str, c))) for c in codes[: int(os.environ["NUMBER_OF_CLASSES"])]]
+os.environ["TASK_CODES"] = " ".join(
+    ["".join(list(map(str, c))) for c in codes[: int(os.environ["TASK_NUMBER_OF_CLASSES"])]]
 )
-os.environ["CALIBRATION_CODES"] = codes
-os.environ["TASK_CODES"] = codes
+
+if os.environ["CALIBRATION_LAYOUT"] == "simple":
+    os.environ["CALIBRATION_NUMBER_OF_CLASSES"] = os.getenv("CALIBRATION_NUMBER_OF_CLASSES")
+    if not check_int("CALIBRATION_NUMBER_OF_CLASSES") or int(os.environ["CALIBRATION_NUMBER_OF_CLASSES"]) <= 0:
+        error_handling(
+            "CALIBRATION_NUMBER_OF_CLASSES", f"CALIBRATION_NUMBER_OF_CLASSES must be a strictly positive integer", 2
+        )
+elif os.environ["CALIBRATION_LAYOUT"] == "keyboard":
+    os.environ["CALIBRATION_NUMBER_OF_CLASSES"] = "11"
+elif os.environ["CALIBRATION_LAYOUT"] == "grid":
+    os.environ["CALIBRATION_NUMBER_OF_CLASSES"] = "9"
+elif  os.environ["CALIBRATION_LAYOUT"] == "single":
+    os.environ["CALIBRATION_NUMBER_OF_CLASSES"] = "1"
+
+if int(os.environ["CALIBRATION_NUMBER_OF_CLASSES"]) > len(codes):
+        error_handling(
+            "CALIBRATION_NUMBER_OF_CLASSES",
+            f"Not enough codes {len(codes)} for the specified number of classes",
+            len(codes),
+        )
+
+os.environ["CALIBRATION_CODES"] = " ".join(
+    ["".join(list(map(str, c))) for c in codes[: int(os.environ["CALIBRATION_NUMBER_OF_CLASSES"])]]
+)
 
 # Check integer
 os.environ["SEED"] = os.getenv("SEED")
@@ -454,7 +481,7 @@ if int(os.environ["MAX_PRED_LENGTH"]) < int(os.environ["MIN_BUFFER_LENGTH"]):
 # Cued task sequence
 if os.environ["CUED_TASK_SEQUENCE_ENABLE"]:
     stim_sequence = cued_task_sequence(
-        int(os.environ["NUMBER_OF_CLASSES"]), int(os.environ["CUED_TASK_SEQUENCE_REP"])
+        int(os.environ["TASK_NUMBER_OF_CLASSES"]), int(os.environ["CUED_TASK_SEQUENCE_REP"])
     )
     logger.debug(f"Using sequence {stim_sequence} for the cued task")
     os.environ["CUED_TASK_TARGET_REP"] = str(stim_sequence)

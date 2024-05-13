@@ -215,7 +215,6 @@ class ERP(Node):
 
             if data is not None and data.size != 0 and data_non_target is not None and data_non_target.size != 0:
                 # Compute ERP for each electrode
-                self.logger.debug(f"Computing ERP for {data.shape[0]} epochs")
                 erp_target = np.mean(data, axis=0)
                 erp_non_target = np.mean(data_non_target, axis=0)
                 erp_sliding = np.mean(data[-self._sliding_window:], axis=0)

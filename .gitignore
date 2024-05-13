@@ -2,6 +2,9 @@
 log/*
 *.log
 
+# Do not upload the codes ;)
+codes/*
+
 # Ignore POMDP files
 *.pomdp
 *.policy

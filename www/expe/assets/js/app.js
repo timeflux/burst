@@ -261,6 +261,8 @@ class Burst {
         set_css_var('--target-url', 'url(../img/' + this.options.stim.type + '.png)');
         set_css_var('--target-depth', hex_to_rgba(this.options.colors.target_off, 1 - this.options.stim.depth));
 
+        console.log(this.options.codes)
+
         // Initialize layouts
         this.layouts = {};
         for (let stage of ['calibration', 'task']) {
@@ -876,8 +878,8 @@ class Score {
 load_settings().then(async settings => {
 
     // Initialize
+    console.log(settings)
     let burst = new Burst(settings.app);
-
     // Handle events
     burst.io.subscribe('predictions');
     burst.io.on('predictions', (data, meta) => {
