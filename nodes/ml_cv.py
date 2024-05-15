@@ -31,7 +31,7 @@ class PipelineCV(Pipeline):
         cv_score(X, y, cv=None, **kwargs): Perform cross-validation and return the mean score.
     """
 
-    def cv_score(self, X, y, cv=None, **kwargs):
+    def cv_score_fit(self, X, y, cv=None, scoring='accuracy', **kwargs):
         """
         Perform cross-validation and return the mean score.
 
@@ -48,8 +48,8 @@ class PipelineCV(Pipeline):
             ValueError: If cross-validation fails.
         """
         try:
-            scores = cross_val_score(self, X, y, cv=cv, **kwargs)
-            return scores.mean()
+            self.scores = cross_val_score(self, X, y, cv=cv, scoring=scoring, **kwargs)
+            self.fit(X, y)
         except Exception as e:
             raise ValueError("Cross-validation failed: {}".format(e))
 
@@ -201,11 +201,9 @@ class Classification_Pipeline(Node):
                 self._warmup()
                 self._run_preprocessing()
                 if self.cv is not None:
-                    #self._task = Task(
-                    #    self._pipeline, "cv_score", self._X_train, self._y_train, cv=self.cv, scoring='accuracy'
-                    #).start()
-                    self._score = self._pipeline.cv_score(self._pipeline, self._X_train, self._y_train, cv=self.cv, scoring='accuracy')
-                    self.logger.debug(f"Cross-validation score: {self._score.mean()} +/- {self._score.std()}")
+                    self._task = Task(
+                        self._pipeline, "cv_score_fit", self._X_train, self._y_train, cv=self.cv, scoring='accuracy'
+                    ).start()
                 else:
                     self._task = Task(
                         self._pipeline, "fit", self._X_train, self._y_train
@@ -219,7 +217,7 @@ class Classification_Pipeline(Node):
                     self._pipeline = status["instance"]
                     self._status = READY
                     self.logger.debug(f"Model fitted in {status['time']} seconds")
-                    self._score = self._pipeline.cv
+                    self._score = self._pipeline.scores
                     self.logger.debug(f"Cross-validation score: {self._score.mean()} +/- {self._score.std()}")
                     self.o_events.data = make_event("ready")
                 else:
@@ -240,6 +238,8 @@ class Classification_Pipeline(Node):
                 if self.mode.startswith("fit"):
                     args.append(self._y)
                 self._run_preprocessing()
+                self.logger.debug(f"Pipeline before running: {self._pipeline}")
+                self.logger.debug("Mode: " + self.mode)
                 self._out = getattr(self._pipeline, self.mode)(*args)
 
         # Set output streams
@@ -319,11 +319,7 @@ class Classification_Pipeline(Node):
 
     def _make_pipeline(self, steps, memory=None, verbose=False):
         pipeline = self._instantiate_pipeline(steps)
-        
-        #self._pipeline = PipelineCV((make_pipeline(*pipeline, memory, verbose)).steps)
-        self._pipeline = make_pipeline(*pipeline, memory=memory, verbose=verbose)
-        self.logger.debug(f"Pipeline after making pipeline lol : {self._pipeline}")
-        self._pipeline.cv_score = cross_val_score
+        self._pipeline = PipelineCV((make_pipeline(*pipeline, memory=memory, verbose=verbose)).steps)
 
     def _load_pipeline(self, path):
         try:
