@@ -15,7 +15,7 @@ graphs:
       length: {{ EPOCH }}
   - id: classification
     module: nodes.ml_cv
-    class: Classification_Pipeline
+    class: Pipeline
     params:
       mode: predict_proba
       meta_label: [epoch, context, bit]
@@ -24,6 +24,7 @@ graphs:
       event_start_training: calibration_ends
       event_reset: reset
       cv: 5
+      scoring: "accuracy"
       steps:
         - module: nodes.estimators.transformers.shape
           class: Transpose

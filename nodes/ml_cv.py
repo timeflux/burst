@@ -22,13 +22,17 @@ READY = 3
 
 class PipelineCV(Pipeline):
     """
-    Extension of SKlearn Pipeline class with cross-validation.
-
-    Attributes:
-        cv (int): The cross-validation score.
-
+    A pipeline with cross-validation scoring.
+    
+    Args:
+        steps (list): List of (name, transform) tuples (implementing fit/transform) that are chained, in the order in which they are chained, with the last object an estimator.
+        memory (str|object): Used to cache the fitted transformers of the pipeline.
+        verbose (bool): If True, the time elapsed while fitting each step will be printed as it is completed.
     Methods:
-        cv_score(X, y, cv=None, **kwargs): Perform cross-validation and return the mean score.
+        cv_score_fit(X, y, cv=None, scoring='accuracy', **kwargs): Perform cross-validation, store the scores and fit the model.
+    Attributes:
+        scores (array-like): The cross-validation scores.
+    
     """
 
     def cv_score_fit(self, X, y, cv=None, scoring='accuracy', **kwargs):
@@ -39,6 +43,7 @@ class PipelineCV(Pipeline):
             X (array-like): The feature matrix.
             y (array-like): The target labels.
             cv (int, cross-validation generator, or an iterable): Determines the cross-validation splitting strategy.
+            scoring (str): A string (see scikit-learn documentation) or a scorer callable object/function with signature scorer(estimator, X, y).
             **kwargs: Additional keyword arguments to be passed to cross_val_score.
 
         Returns:
@@ -48,12 +53,15 @@ class PipelineCV(Pipeline):
             ValueError: If cross-validation fails.
         """
         try:
-            self.scores = cross_val_score(self, X, y, cv=cv, scoring=scoring, **kwargs)
+            # Shuffle the data
+            indices = np.arange(X.shape[0])
+            np.random.shuffle(indices)
+            self.scores = cross_val_score(self, X[indices], y[indices], cv=cv, scoring=scoring, **kwargs)
             self.fit(X, y)
         except Exception as e:
             raise ValueError("Cross-validation failed: {}".format(e))
 
-class Classification_Pipeline(Node):
+class Pipeline(Node):
     """Fit, transform and predict.
 
     Training on continuous data is always unsupervised.
@@ -117,6 +125,7 @@ class Classification_Pipeline(Node):
         memory=None,
         verbose=False,
         cv=None,
+        scoring="accuracy",
     ):
         # TODO: validation
         # TODO: save model to file
@@ -137,6 +146,7 @@ class Classification_Pipeline(Node):
         self.model = model
         self.cv = cv
         self._buffer_size = pd.Timedelta(buffer_size)
+        self.scoring = scoring
         if model:
             self._load_pipeline(model)
         elif steps:
@@ -202,7 +212,7 @@ class Classification_Pipeline(Node):
                 self._run_preprocessing()
                 if self.cv is not None:
                     self._task = Task(
-                        self._pipeline, "cv_score_fit", self._X_train, self._y_train, cv=self.cv, scoring='accuracy'
+                        self._pipeline, "cv_score_fit", self._X_train, self._y_train, cv=self.cv, scoring=self.scoring
                     ).start()
                 else:
                     self._task = Task(
@@ -238,8 +248,6 @@ class Classification_Pipeline(Node):
                 if self.mode.startswith("fit"):
                     args.append(self._y)
                 self._run_preprocessing()
-                self.logger.debug(f"Pipeline before running: {self._pipeline}")
-                self.logger.debug("Mode: " + self.mode)
                 self._out = getattr(self._pipeline, self.mode)(*args)
 
         # Set output streams
@@ -259,6 +267,7 @@ class Classification_Pipeline(Node):
         self._dimensions = None
         self._shape = ()
         self._task = None
+        self._score = None
         if self.mode.startswith("fit"):
             self.fit = False
         elif self.mode.startswith("predict"):
