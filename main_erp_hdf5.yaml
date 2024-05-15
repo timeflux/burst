@@ -6,7 +6,7 @@ import:
   - graphs/erp_plot/preprocessing.yaml
   #- graphs/erp_plot/preprocessing_reref.yaml
   # Classification graph
-  - graphs/classification.yaml
+  - graphs/classification_cv.yaml
   # ERP computation graph
   - graphs/erp_plot/erp.yaml
   # Record graph
