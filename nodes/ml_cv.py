@@ -20,10 +20,11 @@ ACCUMULATING = 1
 FITTING = 2
 READY = 3
 
+
 class PipelineCV(Pipeline):
     """
     A pipeline with cross-validation scoring.
-    
+
     Args:
         steps (list): List of (name, transform) tuples (implementing fit/transform) that are chained, in the order in which they are chained, with the last object an estimator.
         memory (str|object): Used to cache the fitted transformers of the pipeline.
@@ -32,10 +33,10 @@ class PipelineCV(Pipeline):
         cv_score_fit(X, y, cv=None, scoring='accuracy', **kwargs): Perform cross-validation, store the scores and fit the model.
     Attributes:
         scores (array-like): The cross-validation scores.
-    
+
     """
 
-    def cv_score_fit(self, X, y, cv=None, scoring='accuracy', **kwargs):
+    def cv_score_fit(self, X, y, cv=None, scoring="accuracy", **kwargs):
         """
         Perform cross-validation and return the mean score.
 
@@ -56,10 +57,13 @@ class PipelineCV(Pipeline):
             # Shuffle the data
             indices = np.arange(X.shape[0])
             np.random.shuffle(indices)
-            self.scores = cross_val_score(self, X[indices], y[indices], cv=cv, scoring=scoring, **kwargs)
+            self.scores = cross_val_score(
+                self, X[indices], y[indices], cv=cv, scoring=scoring, **kwargs
+            )
             self.fit(X, y)
         except Exception as e:
             raise ValueError("Cross-validation failed: {}".format(e))
+
 
 class Pipeline(Node):
     """Fit, transform and predict.
@@ -82,24 +86,27 @@ class Pipeline(Node):
         o_events (Port): Event output, provides DataFrame.
 
     Args:
-        steps (dict): Pipeline steps and settings (ignored if 'model' is set)
-        fit (bool):
-        mode ('predict'|'predict_proba'|'predict_log_proba'|'transform'|'fit_predict'|'fit_transform'):
-        meta_label (str|tuple|None):
-        event_start_accumulation (str):
-        event_stop_accumulation (str):
-        event_start_training (str):
-        event_reset (str):
-        buffer_size (str):
-        passthrough (bool):
-        resample (bool):
-        resample_direction ('right'|'left'|'both'):
-        resample_rate (None|float):
-        preprocessing: A list of preprocessing steps
-        warmup (str): Load a .npy or .npz file and bootstrap the model with initial data
-        model (str): Load a pre-computed model, persisted with joblib
-        persist (str): Save the model - NOT IMPLEMENTED
-        cv: Cross-validation - NOT IMPLEMENTED
+        steps (list): List of dictionaries, each containing the keys 'module', 'class' and 'args'.
+        fit (bool): Whether to fit the model.
+        mode (str): The mode of operation: 'fit', 'predict', 'predict_proba', 'predict_log_proba', 'transform', 'fit_predict', 'fit_transform'.
+        meta_label (tuple): The keys to use for the epoch label.
+        event_start_accumulation (str): The event marking the start of accumulation.
+        event_stop_accumulation (str): The event marking the stop of accumulation.
+        event_start_training (str): The event marking the start of training.
+        event_reset (str): The event marking the reset of the model.
+        buffer_size (str): The buffer size to accumulate data before starting training.
+        passthrough (bool): Whether to pass input data to the output.
+        resample (bool): Whether to resample the output.
+        resample_direction (str): The direction to resample.
+        resample_rate (float): The resampling rate.
+        preprocessing (list): List of dictionaries, each containing the keys 'module', 'class' and 'args'.
+        warmup (str): The path to a warmup file.
+        model (str): The path to a model file.
+        persist (str): The path to save the model.
+        memory (str): Used to cache the fitted transformers of the pipeline.
+        verbose (bool): If True, the time elapsed while fitting each step will be printed as it is completed.
+        cv (int, cross-validation generator, or an iterable): Determines the cross-validation splitting strategy. Choose an int for number of fold.
+        scoring (str): A string (see scikit-learn documentation) or a scorer callable object/function with signature scorer(estimator, X, y).
 
     """
 
@@ -129,7 +136,6 @@ class Pipeline(Node):
     ):
         # TODO: validation
         # TODO: save model to file
-        # TODO: cross-validation
         # TODO: provide more context for errors
         self.fit = fit
         self.mode = mode
@@ -212,7 +218,12 @@ class Pipeline(Node):
                 self._run_preprocessing()
                 if self.cv is not None:
                     self._task = Task(
-                        self._pipeline, "cv_score_fit", self._X_train, self._y_train, cv=self.cv, scoring=self.scoring
+                        self._pipeline,
+                        "cv_score_fit",
+                        self._X_train,
+                        self._y_train,
+                        cv=self.cv,
+                        scoring=self.scoring,
                     ).start()
                 else:
                     self._task = Task(
@@ -228,7 +239,9 @@ class Pipeline(Node):
                     self._status = READY
                     self.logger.debug(f"Model fitted in {status['time']} seconds")
                     self._score = self._pipeline.scores
-                    self.logger.debug(f"Cross-validation score: {self._score.mean()} +/- {self._score.std()}")
+                    self.logger.debug(
+                        f"Cross-validation score: {self._score.mean()} +/- {self._score.std()}"
+                    )
                     self.o_events.data = make_event("ready")
                 else:
                     self.logger.error(
@@ -328,7 +341,9 @@ class Pipeline(Node):
 
     def _make_pipeline(self, steps, memory=None, verbose=False):
         pipeline = self._instantiate_pipeline(steps)
-        self._pipeline = PipelineCV((make_pipeline(*pipeline, memory=memory, verbose=verbose)).steps)
+        self._pipeline = PipelineCV(
+            (make_pipeline(*pipeline, memory=memory, verbose=verbose)).steps
+        )
 
     def _load_pipeline(self, path):
         try:

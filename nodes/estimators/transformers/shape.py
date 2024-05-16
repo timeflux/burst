@@ -18,8 +18,8 @@ class Transpose(BaseEstimator, TransformerMixin):
 
 class Expand(BaseEstimator, TransformerMixin):
     def __init__(self, axis=0, dimensions=3):
-        self._axis = axis
-        self._dimensions = dimensions
+        self.axis = axis
+        self.dimensions = dimensions
 
     def fit(self, X, y=None):
         return self
@@ -37,7 +37,7 @@ class Expand(BaseEstimator, TransformerMixin):
 
 class Reduce(BaseEstimator, TransformerMixin):
     def __init__(self, axis=0):
-        self._axis = axis
+        self.axis = axis
 
     def fit(self, X, y=None):
         return self
