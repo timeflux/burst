@@ -971,7 +971,10 @@ load_settings().then(async settings => {
 
     // Sequence task
     stages[6] = async () => {
-        if (burst.options.task.sequence.enable && (burst.options.layout.task == 'keyboard' || burst.options.layout.task == 'simple')) {
+        if (burst.options.task.sequence.enable && (burst.options.layout.task == 'keyboard' 
+        || burst.options.layout.task == 'simple'
+        || burst.options.layout.task == 'grid'
+        )) {
             notify(
                 'Ready?',
                 //'Now, try to spell the sequence.<br>Use the backspace key if you make an error!',
