@@ -1,13 +1,19 @@
 # Ignore the logs
-log/*
 *.log
 
 # Do not upload the codes ;)
 codes/*
 
+# Ignore data
+*.hdf5
+
+# Ignore screenshots
+*.png
+
 # Ignore POMDP files
 *.pomdp
 *.policy
-data/*
+
+# Ignore the cache
 **/__pycache__/
 *.pyc
