@@ -211,7 +211,7 @@ class AccumulationMDPred(AbstractAccumulation):
 
 
 
-        if self._momentum[target] > self._momentum_threshold:
+        if self._momentum[target] > self._momentum_threshold | self._consec[target] > self._min_frames_pred:
             res_momentum = self._momentum/np.sum(self._momentum)
             res_momentum = (res_momentum[target] - res_momentum)[res_momentum[target] - res_momentum > 0]
             if any(res_momentum <= self._tooclose_threshold):
