@@ -1,0 +1,87 @@
+graphs:
+
+- id: Classification
+  nodes:
+  - id: sub
+    module: timeflux.nodes.zmq
+    class: Sub
+    params:
+      topics: [ filtered, events ]
+  - id: epoch
+    module: timeflux.nodes.epoch
+    class: Samples
+    params:
+      trigger: epoch
+      length: {{ EPOCH }}
+  - id: classification
+    module: nodes.ml_cv
+    class: Pipeline
+    params:
+      mode: predict_proba
+      meta_label: [epoch, context, bit]
+      event_start_accumulation: calibration_begins
+      event_stop_accumulation: calibration_ends
+      event_start_training: calibration_ends
+      event_reset: reset
+      cv: 5
+      scoring: "accuracy"
+      steps:
+        - module: nodes.estimators.transformers.shape
+          class: Transpose
+          args:
+            axes: [0, 2, 1]
+        - module: estimators.burst
+          class: Scale
+        - module: pyriemann.estimation
+          class: XdawnCovariances
+          args:
+            nfilter: 4
+            estimator: lwf
+            xdawn_estimator: scm
+        - module: pyriemann.tangentspace
+          class: TangentSpace
+          args:
+            metric: riemann
+        - module: sklearn.discriminant_analysis
+          class: LinearDiscriminantAnalysis
+          args:
+            solver: lsqr
+            shrinkage: auto
+  - id: predict
+    module: nodes.accumulation.md
+    class: AccumulationMDPred
+    params:
+      codes:
+      {% for CODE in TASK_CODES.split() %}
+        - "{{CODE}}"
+      {% endfor %}
+      min_buffer_size: {{MIN_BUFFER_LENGTH}}
+      max_buffer_size: {{MAX_BUFFER_LENGTH}}
+      min_frames_pred: {{MIN_PRED_LENGTH}}
+      max_frames_pred: {{MAX_PRED_LENGTH}}
+  - id: pub
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: predictions
+  edges:
+    - source: sub:filtered
+      target: epoch
+    - source: sub:events
+      target: epoch:events
+    - source: sub:events
+      target: classification:events
+    - source: sub:events
+      target: predict:events
+    - source: epoch:*
+      target: classification:training
+    - source: epoch:*
+      target: classification
+    - source: classification:events
+      target: predict:clf
+    - source: predict
+      target: pub
+    # - source: classification:events
+    #   target: display
+  rate: 10
+

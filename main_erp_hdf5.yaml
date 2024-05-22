@@ -1,12 +1,11 @@
 import:
   # Device graph : sensor
-  #- graphs/{{DEVICE}}.yaml
   - graphs/hdf5_reader.yaml
   # Preprocessing graph
   - graphs/erp_plot/preprocessing.yaml
-  #- graphs/erp_plot/preprocessing_reref.yaml
   # Classification graph
-  - graphs/classification_cv.yaml
+  #- graphs/classification_cv.yaml
+  - graphs/classification_cv_md.yaml
   # ERP computation graph
   - graphs/erp_plot/erp.yaml
   # Record graph
