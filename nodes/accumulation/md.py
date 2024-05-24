@@ -115,7 +115,8 @@ class AbstractAccumulation(Node):
 
                 self.decision(timestamp)
 
-    def decision(self, timestamp): ...
+    def decision(self, timestamp):
+        ...
 
     def correlation(self, x: list[int], indices: list[int]):
         """
@@ -156,10 +157,27 @@ class AbstractAccumulation(Node):
         self._recovery = False
         self._frames = 0
 
-class AccumulationMDPred(AbstractAccumulation):
 
-    def __init__(self, codes, min_buffer_size=30, max_buffer_size=200, min_frames_pred=20, max_frames_pred=300, recovery=300, momentum_threshold = 0.9):
-        AbstractAccumulation.__init__(self,codes, min_buffer_size, max_buffer_size, min_frames_pred, max_frames_pred, recovery)
+class AccumulationMDPred(AbstractAccumulation):
+    def __init__(
+        self,
+        codes,
+        min_buffer_size=30,
+        max_buffer_size=200,
+        min_frames_pred=20,
+        max_frames_pred=300,
+        recovery=300,
+        momentum_threshold=0.9,
+    ):
+        AbstractAccumulation.__init__(
+            self,
+            codes,
+            min_buffer_size,
+            max_buffer_size,
+            min_frames_pred,
+            max_frames_pred,
+            recovery,
+        )
         self._current_target = 0
         self._target_acc = 0
         self._preds = {c: 0 for c in range(len(self.codes))}
@@ -168,7 +186,6 @@ class AccumulationMDPred(AbstractAccumulation):
         self._momentum = np.zeros(len(self.codes))
         self._momentum_threshold = momentum_threshold
         self._tooclose_threshold = 0.05
-
 
     def decision(self, timestamp):
         # Compute the Pearson correlation coefficient
@@ -189,7 +206,6 @@ class AccumulationMDPred(AbstractAccumulation):
         # increased by M(c) - M(c-1), until it exceeds a threshold to output the accumulated decision. At the same time,
         # the momentum is decreased by the same quantity for all the other targets.
 
-
         if target != self._current_target:
             self._consec = np.zeros(len(self.codes))
 
@@ -197,31 +213,44 @@ class AccumulationMDPred(AbstractAccumulation):
         self._consec[target] += 1
 
         for i in range(len(self._momentum)):
-            if i == target: # Momentum
-                self._momentum[i] += pow(2, self._consec[i] / self._min_frames_pred) - \
-                                          pow(2, (self._consec[i] - 1) / self._min_frames_pred)
-            else:   # Decay
-                self._momentum[i] -= pow(2, self._consec[target] / self._min_frames_pred) - \
-                                          pow(2, (self._consec[target] - 1) / self._min_frames_pred)
-
+            if i == target:  # Momentum
+                self._momentum[i] += pow(
+                    2, self._consec[i] / self._min_frames_pred
+                ) - pow(2, (self._consec[i] - 1) / self._min_frames_pred)
+            else:  # Decay
+                self._momentum[i] -= pow(
+                    2, self._consec[target] / self._min_frames_pred
+                ) - pow(2, (self._consec[target] - 1) / self._min_frames_pred)
 
         self._preds.update(
             {self._current_target: self._preds[self._current_target] + 1}
         )
 
-
-
-        if self._momentum[target] > self._momentum_threshold | self._consec[target] > self._min_frames_pred:
-            res_momentum = self._momentum/np.sum(self._momentum)
-            res_momentum = (res_momentum[target] - res_momentum)[res_momentum[target] - res_momentum > 0]
+        if (
+            self._momentum[target]
+            > self._momentum_threshold | self._consec[target]
+            > self._min_frames_pred
+        ):
+            res_momentum = self._momentum / np.sum(self._momentum)
+            res_momentum = (res_momentum[target] - res_momentum)[
+                res_momentum[target] - res_momentum > 0
+            ]
             if any(res_momentum <= self._tooclose_threshold):
-                self._momentum = self._momentum/2
-                self.logger.debug(f"Prediction uncertain: Momentum: [{', '.join([str(ind)+'=>'+str(count) for ind, count in zip(range(len(self._consec)), self._momentum)])}]\t Prob: [{', '.join([str(ind)+'=>'+str(p) for ind, p in zip(range(len(self._consec)), self._momentum/np.sum(self._momentum))])}] -- RESET")
-
+                self._momentum = self._momentum / 2
+                self.logger.debug(
+                    f"Prediction uncertain: Momentum: [{', '.join([str(ind)+'=>'+str(count) for ind, count in zip(range(len(self._consec)), self._momentum)])}]\t Prob: [{', '.join([str(ind)+'=>'+str(p) for ind, p in zip(range(len(self._consec)), self._momentum/np.sum(self._momentum))])}] -- RESET"
+                )
 
             else:
-                self.logger.debug(f"Candidate: {self._current_target}\tFrame: {self._frames}\t Momentum: [{', '.join([str(ind)+'=>'+str(count) for ind, count in zip(range(len(self._consec)), self._momentum)])}]\t Prob: [{', '.join([str(ind)+'=>'+str(p) for ind, p in zip(range(len(self._consec)), self._momentum/np.sum(self._momentum))])}]")
-                meta = {"timestamp": timestamp, "target": self._current_target, "frames": str(self._frames), "decoded": ''.join(list(map(str, self._probas)))}
+                self.logger.debug(
+                    f"Candidate: {self._current_target}\tFrame: {self._frames}\t Momentum: [{', '.join([str(ind)+'=>'+str(count) for ind, count in zip(range(len(self._consec)), self._momentum)])}]\t Prob: [{', '.join([str(ind)+'=>'+str(p) for ind, p in zip(range(len(self._consec)), self._momentum/np.sum(self._momentum))])}]"
+                )
+                meta = {
+                    "timestamp": timestamp,
+                    "target": self._current_target,
+                    "frames": str(self._frames),
+                    "decoded": "".join(list(map(str, self._probas))),
+                }
                 meta = {
                     "timestamp": timestamp,
                     "target": str(self._current_target),
@@ -234,7 +263,7 @@ class AccumulationMDPred(AbstractAccumulation):
 
         else:
             # skip for more data
-                ...
+            ...
 
     def reset(self):
         AbstractAccumulation.reset(self)

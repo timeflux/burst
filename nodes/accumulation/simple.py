@@ -2,8 +2,8 @@ from nodes.accumulation.base import AbstractAccumulation
 from timeflux.helpers.port import make_event
 import numpy as np
 
-class AccumulationPrevalentTarget(AbstractAccumulation):
 
+class AccumulationPrevalentTarget(AbstractAccumulation):
     def __init__(
         self,
         codes,
@@ -73,7 +73,6 @@ class AccumulationPrevalentTarget(AbstractAccumulation):
 
 
 class AccumulationSteadyPred(AbstractAccumulation):
-
     def __init__(
         self,
         codes,
@@ -151,5 +150,3 @@ class AccumulationSteadyPred(AbstractAccumulation):
         self._preds = {c: 0 for c in range(len(self.codes))}
         self._current_target = -1
         self._target_acc = 0
-
-

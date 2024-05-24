@@ -2,12 +2,11 @@ import:
   # Device graph : sensor
   - graphs/{{DEVICE}}.yaml
   # Preprocessing graph
-  - graphs/erp_plot/preprocessing.yaml
-  #- graphs/erp_plot/preprocessing_reref.yaml
+  - graphs/preprocessing.yaml
   # Classification graph
-  - graphs/classification.yaml
+  - graphs/classification_cv.yaml
   # ERP computation graph
-  - graphs/erp_plot/erp.yaml
+  - graphs/erp.yaml
   # Record graph
   {% if RECORD_DATA == 'true' %}
   - graphs/record.yaml

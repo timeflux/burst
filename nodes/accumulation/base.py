@@ -115,7 +115,8 @@ class AbstractAccumulation(Node):
 
                 self.decision(timestamp)
 
-    def decision(self, timestamp): ...
+    def decision(self, timestamp):
+        ...
 
     def correlation(self, x: list[int], indices: list[int]):
         """
@@ -155,4 +156,3 @@ class AbstractAccumulation(Node):
         self._indices = []
         self._recovery = False
         self._frames = 0
-

@@ -2,12 +2,12 @@ import:
   # Device graph : sensor
   - graphs/hdf5_reader.yaml
   # Preprocessing graph
-  - graphs/erp_plot/preprocessing.yaml
-  # Classification graph
-  #- graphs/classification_cv.yaml
-  - graphs/classification_cv_md.yaml
+  - graphs/preprocessing.yaml
+  # Classification graph : Choose with cross-validation and momentum or not
+  - graphs/classification_cv.yaml
+  #- graphs/classification_cv_md.yaml
   # ERP computation graph
-  - graphs/erp_plot/erp.yaml
+  - graphs/erp.yaml
   # Record graph
   {% if RECORD_DATA == 'true' %}
   - graphs/record.yaml

@@ -19,12 +19,12 @@ class ERP(Node):
     Inputs are expected to be epoched data. Continuous data are handled but are not intended for this node.
     This node is best used after the Sample node from timeflux.epoch.
 
-    The accumulation is triggered by the event_start_accumulation and stopped by the event_stop_accumulation. 
+    The accumulation is triggered by the event_start_accumulation and stopped by the event_stop_accumulation.
     These events are expected to be the same as the ones used in Accumulation node in a classification pipeline.
-    
-    The input epochs are stacked if they match the target_label. 
+
+    The input epochs are stacked if they match the target_label.
     The ERP is computed by averaging the epochs for each electrode.
-    
+
     Attributes:
         i (Port): Continuous data input, expects DataFrame.
         i_* (Port): Epoched data input, expects DataFrame.
@@ -181,8 +181,12 @@ class ERP(Node):
                                 if self._X_non_target is None:
                                     self._X_non_target = np.array([data])
                                 else:
-                                    self._X_non_target = np.vstack((self._X_non_target, [data]))
-                                indices_non_target = np.append(indices_non_target, index)
+                                    self._X_non_target = np.vstack(
+                                        (self._X_non_target, [data])
+                                    )
+                                indices_non_target = np.append(
+                                    indices_non_target, index
+                                )
         else:
             self.logger.warning("Non epoched data found during accumulation. Ignoring.")
 
@@ -190,7 +194,9 @@ class ERP(Node):
         if indices_target.size != 0:
             self._X_indices = np.append(self._X_indices, indices_target)
         if indices_non_target.size != 0:
-            self._X_indices_non_target = np.append(self._X_indices_non_target, indices_non_target)
+            self._X_indices_non_target = np.append(
+                self._X_indices_non_target, indices_non_target
+            )
 
         # Trim
         if self._X_target is not None:
@@ -200,7 +206,9 @@ class ERP(Node):
             if self._y is not None:
                 self._y = self._y[mask]
         if self._X_non_target is not None:
-            mask = (self._X_indices_non_target >= start) & (self._X_indices_non_target < stop)
+            mask = (self._X_indices_non_target >= start) & (
+                self._X_indices_non_target < stop
+            )
             self._X_non_target = self._X_non_target[mask]
 
     def _send(self):
@@ -213,21 +221,30 @@ class ERP(Node):
             data = self._X_target
             data_non_target = self._X_non_target
 
-            if data is not None and data.size != 0 and data_non_target is not None and data_non_target.size != 0:
+            if (
+                data is not None
+                and data.size != 0
+                and data_non_target is not None
+                and data_non_target.size != 0
+            ):
                 # Compute ERP for each electrode
                 erp_target = np.mean(data, axis=0)
                 erp_non_target = np.mean(data_non_target, axis=0)
-                erp_sliding = np.mean(data[-self._sliding_window:], axis=0)
+                erp_sliding = np.mean(data[-self._sliding_window :], axis=0)
                 # Create DataFrame for ERPs with electrode labels as columns
-                df_non_target = pd.DataFrame(data=erp_non_target, columns=self._electrodes)
+                df_non_target = pd.DataFrame(
+                    data=erp_non_target, columns=self._electrodes
+                )
                 df = pd.DataFrame(data=erp_target, columns=self._electrodes)
                 df_sliding = pd.DataFrame(data=erp_sliding, columns=self._electrodes)
-                
+
                 # Modify timestamps to match live streaming
                 df.index = now() + pd.to_timedelta(df.index, unit="s")
-                df_non_target.index = now() + pd.to_timedelta(df_non_target.index, unit="s")
-                df_sliding.index = now() + pd.to_timedelta(df_sliding.index, unit="s")             
-                
+                df_non_target.index = now() + pd.to_timedelta(
+                    df_non_target.index, unit="s"
+                )
+                df_sliding.index = now() + pd.to_timedelta(df_sliding.index, unit="s")
+
                 # Update output events
                 self.o.data = df
                 self.o_non_target.data = df_non_target

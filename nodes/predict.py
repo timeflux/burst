@@ -7,10 +7,12 @@ from timeflux.core.node import Node
 
 # Capture Pearson correlation warnings and throw exceptions
 import warnings
+
 warnings.filterwarnings("error", module="scipy.stats")
 
+
 class Accumulate(Node):
-    """ Accumulation of probabilities
+    """Accumulation of probabilities
 
     This node accumulates the probabilities of single-trial classifications from a ML node.
     When enough confidence is reached for a specific class, a final prediction is made.
@@ -28,7 +30,15 @@ class Accumulate(Node):
         o (Port): Default output, provides DataFrame
     """
 
-    def __init__(self, codes, min_buffer_size=30, max_buffer_size=200, threshold=.75, delta=.5, recovery=300):
+    def __init__(
+        self,
+        codes,
+        min_buffer_size=30,
+        max_buffer_size=200,
+        threshold=0.75,
+        delta=0.5,
+        recovery=300,
+    ):
         self.codes = [[int(bit) for bit in code] for code in codes]
         self.min_buffer_size = min_buffer_size
         self.max_buffer_size = max_buffer_size
@@ -113,20 +123,28 @@ class Accumulate(Node):
                 indices = np.flip(np.argsort(correlations))
                 target = int(indices[0])
                 correlation = correlations[indices[0]]
-                delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
-                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}\tFrame: {self._frames}")
+                delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[
+                    indices[0]
+                ]
+                self.logger.debug(
+                    f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}\tFrame: {self._frames}"
+                )
                 if correlation < self.threshold:
                     continue
                 if delta < self.delta:
                     continue
 
                 # Send prediction
-                meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
+                meta = {
+                    "timestamp": timestamp,
+                    "target": target,
+                    "score": correlation,
+                    "frames": self._frames,
+                }
                 self.o.data = make_event("predict", meta, True)
                 self.logger.debug(meta)
                 self.reset()
                 self._recovery = timestamp
-
 
     def reset(self):
         self._probas = []
