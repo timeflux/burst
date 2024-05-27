@@ -24,7 +24,8 @@ graphs:
       event_start_training: calibration_ends
       event_reset: reset
       cv: 5
-      scoring: "accuracy"
+      scoring: ["precision","recall","f1"]
+      conf_mat_compute: False
       steps:
         - module: nodes.estimators.transformers.shape
           class: Transpose
@@ -64,6 +65,11 @@ graphs:
     class: Pub
     params:
       topic: predictions
+  - id: pub_scores
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: scores
   edges:
     - source: sub:filtered
       target: epoch

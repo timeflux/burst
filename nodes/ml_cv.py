@@ -6,8 +6,9 @@ import pandas as pd
 import json
 from joblib import load
 from jsonschema import validate
+from sklearn.metrics import confusion_matrix
 from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, cross_val_predict, cross_validate
 from timeflux.core.node import Node
 from timeflux.core.exceptions import ValidationError, WorkerInterrupt
 from timeflux.helpers.background import Task
@@ -36,7 +37,7 @@ class PipelineCV(Pipeline):
 
     """
 
-    def cv_score_fit(self, X, y, cv=None, scoring="accuracy", **kwargs):
+    def cv_score_fit(self, X, y, cv=None, scoring="accuracy", conf_mat_compute=False, **kwargs):
         """
         Perform cross-validation and return the mean score.
 
@@ -53,16 +54,25 @@ class PipelineCV(Pipeline):
         Raises:
             ValueError: If cross-validation fails.
         """
-        try:
-            # Shuffle the data
-            indices = np.arange(X.shape[0])
-            np.random.shuffle(indices)
-            self.scores = cross_val_score(
-                self, X[indices], y[indices], cv=cv, scoring=scoring, **kwargs
-            )
-            self.fit(X, y)
-        except Exception as e:
-            raise ValueError("Cross-validation failed: {}".format(e))
+        if conf_mat_compute:
+            try:
+                indices = np.arange(X.shape[0])
+                np.random.shuffle(indices)
+                self.conf_mat = confusion_matrix(y[indices], cross_val_predict(self, X[indices], y[indices], cv=cv, **kwargs),normalize='all')
+                self.fit(X, y)
+            except Exception as e:
+                raise ValueError("Confusion matrix with cross-validation failed: {}".format(e))
+        else:
+            try:
+                # Shuffle the data
+                indices = np.arange(X.shape[0])
+                np.random.shuffle(indices)
+                self.scores = cross_validate(
+                    self, X[indices], y[indices], cv=cv, scoring=scoring, **kwargs
+                )
+                self.fit(X, y)
+            except Exception as e:
+                raise ValueError("Cross-validation failed: {}".format(e))
 
 
 class Pipeline(Node):
@@ -132,7 +142,8 @@ class Pipeline(Node):
         memory=None,
         verbose=False,
         cv=None,
-        scoring="accuracy",
+        scoring="balanced_accuracy",
+        conf_mat_compute=False
     ):
         # TODO: validation
         # TODO: save model to file
@@ -153,6 +164,7 @@ class Pipeline(Node):
         self.cv = cv
         self._buffer_size = pd.Timedelta(buffer_size)
         self.scoring = scoring
+        self.conf_mat_compute = conf_mat_compute
         if model:
             self._load_pipeline(model)
         elif steps:
@@ -224,6 +236,7 @@ class Pipeline(Node):
                         self._y_train,
                         cv=self.cv,
                         scoring=self.scoring,
+                        conf_mat_compute=self.conf_mat_compute
                     ).start()
                 else:
                     self._task = Task(
@@ -238,10 +251,15 @@ class Pipeline(Node):
                     self._pipeline = status["instance"]
                     self._status = READY
                     self.logger.debug(f"Model fitted in {status['time']} seconds")
-                    self._score = self._pipeline.scores
-                    self.logger.debug(
-                        f"Cross-validation score: {self._score.mean()} +/- {self._score.std()}"
-                    )
+                    if self.conf_mat_compute:
+                        self.logger.debug(f"Confusion matrix: {self._pipeline.conf_mat}")
+                    else:
+                        self._score = self._pipeline.scores
+                        for key, value in self._score.items():
+                            if "test_" in key:
+                                key = key[5:]
+                                self.logger.debug(f"Cross-validation {key} : {value.mean()} +/- {value.std()}")
+                        
                     self.o_events.data = make_event("ready")
                 else:
                     self.logger.error(
