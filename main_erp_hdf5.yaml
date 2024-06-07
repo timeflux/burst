@@ -4,8 +4,8 @@ import:
   # Preprocessing graph
   - graphs/preprocessing.yaml
   # Classification graph : Choose with cross-validation and momentum or not
-  - graphs/classification_cv.yaml
-  #- graphs/classification_cv_md.yaml
+  - graphs/classification.yaml
+  #- graphs/classification_cv.yaml
   # ERP computation graph
   - graphs/erp.yaml
   # Record graph

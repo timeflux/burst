@@ -253,7 +253,7 @@ class Pipeline(Node):
                     self.logger.debug(f"Model fitted in {status['time']} seconds")
                     if self.conf_mat_compute:
                         self.logger.debug(f"Confusion matrix: {self._pipeline.conf_mat}")
-                    else:
+                    elif self.cv is not None:
                         self._score = self._pipeline.scores
                         for key, value in self._score.items():
                             if "test_" in key:

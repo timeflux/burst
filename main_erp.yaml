@@ -4,7 +4,8 @@ import:
   # Preprocessing graph
   - graphs/preprocessing.yaml
   # Classification graph
-  - graphs/classification_cv.yaml
+  #- graphs/classification_cv.yaml
+  - graphs/classification.yaml
   # ERP computation graph
   - graphs/erp.yaml
   # Record graph

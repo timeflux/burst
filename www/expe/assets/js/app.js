@@ -876,7 +876,6 @@ class Score {
 load_settings().then(async settings => {
 
     // Initialize
-    console.log(settings)
     let burst = new Burst(settings.app);
     // Handle events
     burst.io.subscribe('predictions');
@@ -977,7 +976,6 @@ load_settings().then(async settings => {
         )) {
             notify(
                 'Ready?',
-                //'Now, try to spell the sequence.<br>Use the backspace key if you make an error!',
                 'Now, try to copy the sequence!',
                 'Press any key to continue'
             )
@@ -987,7 +985,7 @@ load_settings().then(async settings => {
             let stats = burst.score.stats();
             notify(
                 'Congratulations!',
-                `You achieved a score of ${Math.round(stats.hit_rate.average)}%.<br>Your average activation time was ${Math.round(stats.classification_time.average)}ms per target.`,
+                `You achieved a score of ${Math.round(stats.hit_rate.average)}%.`,
                 'Press any key to continue'
             )
             await key();

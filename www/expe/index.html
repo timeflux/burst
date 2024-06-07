@@ -4,6 +4,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+      // Force cache cleaning if the page wasn't reloaded
+      if (performance.getEntriesByType("navigation")[0].type !== "reload") {
+        location.reload(true);
+        console.log('Cache cleaned');
+      }
+    </script> 
     <script defer src="/common/assets/js/timeflux.js"></script>
     <script defer src="assets/js/app.js"></script>
     <link rel="stylesheet" href="assets/css/style.css">
@@ -63,6 +70,9 @@
           <td><div class="target off">7</div></td>
           <td><div class="target off">8</div></td>
           <td><div class="target off">9</div></td>
+        </tr>
+        <tr>
+          <td><div id="sequence" class="hidden"><span></span><span></span><span></span><span></span></div></td>
         </tr>
       </table>
     </div>

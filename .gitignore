@@ -10,6 +10,9 @@ codes/*
 # Ignore screenshots
 *.png
 
+# Ignore excel files
+*.xlsx
+
 # Ignore POMDP files
 *.pomdp
 *.policy
@@ -17,3 +20,7 @@ codes/*
 # Ignore the cache
 **/__pycache__/
 *.pyc
+
+# Ignore results files
+./results/*
+./results/*/*
