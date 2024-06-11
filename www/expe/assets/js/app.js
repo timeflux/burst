@@ -15,6 +15,27 @@ function notify(title = '', message = '', footer = '') {
 }
 
 /**
+ * Resolve a promise after key press, click or touch
+ * @returns {Promise}
+ * 
+ */
+function interaction() {
+    return new Promise(resolve => {
+        const handler = () => {
+            resolve(true);
+            document.removeEventListener('keydown', handler);
+            document.removeEventListener('click', handler);
+            document.removeEventListener('touchstart', handler);
+        };
+        document.addEventListener('keydown', handler);
+        document.addEventListener('click', handler);
+        document.addEventListener('touchstart', handler);
+    });
+}
+
+
+
+/**
  * Toggle a HTML element class
  *
  * @param {string|object} element - element id or DOM object
@@ -25,6 +46,7 @@ function toggle(element, cls = 'hidden') {
         element = document.getElementById(element);
     }
     element.classList.toggle(cls);
+
 }
 
 /**
@@ -694,6 +716,7 @@ class Burst {
         };
         document.addEventListener('keydown', handler);
 
+
         // Pause for a bit
         await sleep(this.options.run.duration_rest);
 
@@ -900,7 +923,7 @@ load_settings().then(async settings => {
             '<div class="marker center"></div>',
             'Press any key to continue'
         )
-        await key();
+        await interaction();
         toggle('overlay');
     };
 
@@ -911,7 +934,7 @@ load_settings().then(async settings => {
             'We will now start the calibration procedure.<br>Please stay still and try not to blink.<br>Look at the target that will be higlighted in blue.<br>For increased accuracy, we recommend that you silently count the short flashes that will appear inside the designated target.',
             'Press any key to continue'
         )
-        await key();
+        await interaction();
         toggle('overlay');
     };
 
@@ -941,7 +964,7 @@ load_settings().then(async settings => {
             'Now, let us flex these Jedi muscles.<br>Can you activate the targets?',
             'Press any key to continue'
         )
-        await key();
+        await interaction();
         toggle('overlay');
         return await burst.run();
     };
@@ -954,7 +977,7 @@ load_settings().then(async settings => {
                 'Try to activate the designated target.',
                 'Press any key to continue'
             )
-            await key();
+            await interaction();
             toggle('overlay');
             await burst.task_cue();
             let stats = burst.score.stats();
@@ -963,7 +986,7 @@ load_settings().then(async settings => {
                 `You achieved a score of ${Math.round(stats.hit_rate.average)}%.<br>Your average activation time was ${Math.round(stats.classification_time.average)}ms per target.`,
                 'Press any key to continue'
             )
-            await key();
+            await interaction();
             toggle('overlay');
         }
     };
@@ -979,7 +1002,7 @@ load_settings().then(async settings => {
                 'Now, try to copy the sequence!',
                 'Press any key to continue'
             )
-            await key();
+            await interaction();
             toggle('overlay');
             await burst.task_sequence();
             let stats = burst.score.stats();
@@ -988,7 +1011,7 @@ load_settings().then(async settings => {
                 `You achieved a score of ${Math.round(stats.hit_rate.average)}%.`,
                 'Press any key to continue'
             )
-            await key();
+            await interaction();
             toggle('overlay');
         }
     };
