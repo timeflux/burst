@@ -137,11 +137,7 @@ if len(bad_codes) > 0:
 
 
 if os.environ["TASK_LAYOUT"] == "simple":
-    os.environ["TASK_NUMBER_OF_CLASSES"] = os.getenv("TASK_NUMBER_OF_CLASSES")
-    if not check_int("TASK_NUMBER_OF_CLASSES") or int(os.environ["TASK_NUMBER_OF_CLASSES"]) <= 0:
-        error_handling(
-            "TASK_NUMBER_OF_CLASSES", f"TASK_NUMBER_OF_CLASSES must be a strictly positive integer", 2
-        )
+    os.environ["TASK_NUMBER_OF_CLASSES"] = "5"
 elif os.environ["TASK_LAYOUT"] == "keyboard":
     os.environ["TASK_NUMBER_OF_CLASSES"] = "11"
 elif os.environ["TASK_LAYOUT"] == "grid":
@@ -158,11 +154,7 @@ os.environ["TASK_CODES"] = " ".join(
 )
 
 if os.environ["CALIBRATION_LAYOUT"] == "simple":
-    os.environ["CALIBRATION_NUMBER_OF_CLASSES"] = os.getenv("CALIBRATION_NUMBER_OF_CLASSES")
-    if not check_int("CALIBRATION_NUMBER_OF_CLASSES") or int(os.environ["CALIBRATION_NUMBER_OF_CLASSES"]) <= 0:
-        error_handling(
-            "CALIBRATION_NUMBER_OF_CLASSES", f"CALIBRATION_NUMBER_OF_CLASSES must be a strictly positive integer", 2
-        )
+    os.environ["CALIBRATION_NUMBER_OF_CLASSES"] = "5"
 elif os.environ["CALIBRATION_LAYOUT"] == "keyboard":
     os.environ["CALIBRATION_NUMBER_OF_CLASSES"] = "11"
 elif os.environ["CALIBRATION_LAYOUT"] == "grid":

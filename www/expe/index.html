@@ -4,13 +4,6 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script>
-      // Force cache cleaning if the page wasn't reloaded
-      if (performance.getEntriesByType("navigation")[0].type !== "reload") {
-        location.reload(true);
-        console.log('Cache cleaned');
-      }
-    </script> 
     <script defer src="/common/assets/js/timeflux.js"></script>
     <script defer src="assets/js/app.js"></script>
     <link rel="stylesheet" href="assets/css/style.css">
@@ -39,7 +32,7 @@
     <!-- Training layout -->
     <div id="layout-single" class="layout hidden">
       <div class="target off">
-        <div class="marker center"></div>
+        <div class=""center>O</div>
       </div>
     </div>
 
