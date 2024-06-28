@@ -491,6 +491,8 @@ class Burst {
             let preds = [];
             let target = 0;
             let expected = sequence[target];
+            // Keep in mind the results of predictions
+            let results = [];
             this.score.block();
 
             while (true) {
@@ -510,7 +512,9 @@ class Burst {
                 let predicted = event.detail.target;
                 let frames = event.detail.frames;
 
-                // Did we get it right?
+                // Check the predictions
+                
+                // Error in the prediction
                 if (predicted == -1){
                     reset_class('#sequence span');
                     for (let i = 0; i < sequence.length; i++) {
@@ -521,29 +525,35 @@ class Burst {
                         toggle(this.targets[expected].element, 'cue');
                     }
                     this.sequence.reset();
-                }else{
+                }
+                else{
+                    
                     this.running = false;
                     this._reset();
 
                     // Add to history
                     preds.push(predicted);
 
+                    // Did we get it right?
                     let hit = predicted == expected;
+                    // Update the results
+                    results.push(hit);
 
-                    // Get next expected target
-                    if (hit) {
-                        target++;
-                        expected = sequence[target];
-                    }
+                    // Move to next target regardless of hit or miss
+                    target++;
+                    expected = sequence[target];
 
-                    // Update the feedback
-                    reset_class('#sequence span');
+                    // Update the feedback by going through the results
                     for (let i = 0; i < sequence.length; i++) {
                         let element = `#sequence :nth-child(${i + 1})`;
                         if (i == target) {
                             set_class(element, 'active');
                         } else if (i < target) {
-                            set_class(element, 'success');
+                            if (results[i]) {
+                                set_class(element, 'success');
+                            } else {
+                                set_class(element, 'failure');
+                            }
                         }
                     }
 
