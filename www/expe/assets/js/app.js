@@ -589,6 +589,137 @@ class Burst {
 
     }
 
+    async task_sequence_timed() {
+        // Définir la durée limite (2 minutes)
+        //const TIME_LIMIT = 2 * 60 * 1000; // 2 minutes en millisecondes
+        const TIME_LIMIT = .25 * 60 * 1000;
+        const startTime = Date.now();
+    
+        // Fonction pour vérifier si le temps est écoulé
+        const isTimeUp = () => {
+            return Date.now() - startTime >= TIME_LIMIT;
+        };
+    
+        // Mettre à jour le chrono sur la page
+        const updateTimer = () => {
+            const timeElapsed = Date.now() - startTime;
+            const timeLeft = TIME_LIMIT - timeElapsed;
+        };
+    
+        // Mettre à jour le chrono toutes les secondes
+        const timerInterval = setInterval(updateTimer, 1000);
+    
+        // Send start event
+        this.io.event('task_begins', { task: 'sequence' });
+    
+        // Initialize scoring
+        this.score = new Score();
+    
+        // Show the feedback
+        toggle('sequence', 'hidden');
+    
+        // Cue selected targets and wait for a prediction
+        for (let sequence of this.options.task.sequence.sequences) {
+            // Initial feedback
+            set_content('#sequence :nth-child(1)', this.targets[sequence[0]].label, 'active');
+            set_content('#sequence :nth-child(2)', this.targets[sequence[1]].label);
+            set_content('#sequence :nth-child(3)', this.targets[sequence[2]].label);
+            set_content('#sequence :nth-child(4)', this.targets[sequence[3]].label);
+    
+            // Initial state
+            let preds = [];
+            let target = 0;
+            let expected = sequence[target];
+            // Keep in mind the results of predictions
+            let results = [];
+            this.score.block();
+    
+            while (true) {
+                // Vérifier si le temps est écoulé
+                if (isTimeUp()) {
+                    notify('Time Up!', 'You did not complete the sequence in time.', 'Press any key to continue');
+                    clearInterval(timerInterval); // Arrêter la mise à jour du chrono
+                    return;
+                }
+    
+                // Cue
+                await sleep(this.options.run.duration_rest);
+
+                // Wait for a prediction
+                this.running = true;
+                let event = await flag('predict');
+                let predicted = event.detail.target;
+                let frames = event.detail.frames;
+    
+                // Check the predictions
+                if (predicted == -1) {
+                    reset_class('#sequence span');
+                    for (let i = 0; i < sequence.length; i++) {
+                        toggle(this.targets[expected].element, 'cue');
+                    }
+                    await sleep(200);
+                    for (let i = 0; i < sequence.length; i++) {
+                        toggle(this.targets[expected].element, 'cue');
+                    }
+                    this.sequence.reset();
+                } else {
+                    this.running = false;
+                    this._reset();
+    
+                    // Add to history
+                    preds.push(predicted);
+    
+                    // Did we get it right?
+                    let hit = predicted == expected;
+                    results.push(hit);
+    
+                    // Move to next target regardless of hit or miss
+                    target++;
+                    expected = sequence[target];
+    
+                    // Update the feedback by going through the results
+                    for (let i = 0; i < sequence.length; i++) {
+                        let element = `#sequence :nth-child(${i + 1})`;
+                        if (i == target) {
+                            set_class(element, 'active');
+                        } else if (i < target) {
+                            set_class(element, results[i] ? 'success' : 'failure');
+                        }
+                    }
+    
+                    // Cue
+                    let color = 'lock';
+                    if (this.options.task.sequence.cue_feedback) {
+                        color = hit ? 'success' : 'failure';
+                    }
+                    toggle(this.targets[predicted].element, color);
+                    await sleep(this.options.run.duration_lock_on);
+                    toggle(this.targets[predicted].element, color);
+                    await sleep(this.options.run.duration_lock_off);
+    
+                    // Update score
+                    this.score.trial(hit, frames);
+    
+                    // Full match
+                    if (expected === undefined) break;
+                }
+            }
+        }
+    
+        // Hide feedback
+        toggle('sequence', 'hidden');
+    
+        // Pause for a bit
+        await sleep(this.options.run.duration_rest);
+    
+        // Send stop event
+        this.io.event('task_ends', { score: 0 });
+    
+        // Arrêter la mise à jour du chrono
+        clearInterval(timerInterval);
+    }
+    
+
 
     /**
      * Run the sequence evaluation task (with backspace)
@@ -1001,6 +1132,7 @@ load_settings().then(async settings => {
         }
     };
 
+    
     // Sequence task
     stages[6] = async () => {
         if (burst.options.task.sequence.enable && (burst.options.layout.task == 'keyboard' 
@@ -1026,7 +1158,41 @@ load_settings().then(async settings => {
         }
     };
 
+    // Sequence task with a timer
     stages[7] = async () => {
+        if (burst.options.task.sequence.enable && (burst.options.layout.task == 'keyboard' 
+        || burst.options.layout.task == 'simple'
+        || burst.options.layout.task == 'grid'
+        )) {
+            notify(
+                'Ready?',
+                'Now, just do not look at the screen for 2 minutes.',
+                'Press any key to continue'
+            );
+            await interaction();
+            toggle('overlay');
+            console.log(burst.score)
+            // Reinitialize the score
+            burst.score = new Score();
+            await burst.task_sequence_timed()
+            
+            // Compute the total length : length of all elements of burst.score.score
+            let total_length = 0;
+            for (let i = 0; i < burst.score.score.length; i++) {
+                total_length += burst.score.score[i].frames.length;
+            }
+
+            notify(
+                'Time Up!',
+                `This is the number of predictions that were made in 2 minutes : ${total_length}`,
+                'Press any key to continue'
+            );
+            await interaction();
+            toggle('overlay');
+        }
+    };
+
+    stages[8] = async () => {
         notify(
             'Thank you!',
             'We really appreciate your participation.'
