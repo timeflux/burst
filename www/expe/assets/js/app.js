@@ -320,14 +320,15 @@ class Burst {
                 for (let i = 0; i < this.options.task.sequence.sequences; i++) {
                     let sequence = [];
                     for (let j = 0; j < 4; j++) {
-                        sequence.push(get_random_int(this.layouts.task.targets.length - 1));
+                        sequence.push(get_random_int(this.layouts.task.targets.length));
                     }
                     sequences.push(sequence);
                 }
                 this.options.task.sequence.sequences = sequences;
             }
         }
-
+        console.log(this.options.task.sequence.sequences)
+        console.log(this.layouts.task.targets);
         // Initialize status
         this.running = false;
         this.stage = 'calibration';
