@@ -60,6 +60,8 @@ graphs:
       min_frames_pred: {{MIN_PRED_LENGTH}}
       max_frames_pred: {{MAX_PRED_LENGTH}}
       momentum_threshold: {{MOMENTUM_THRESHOLD}}
+      correlation_threshold: {{CORRELATION_THRESHOLD}}
+      diff_correlation_threshold: {{DIFF_CORRELATION_THRESHOLD}}
   - id: pub
     module: timeflux.nodes.zmq
     class: Pub

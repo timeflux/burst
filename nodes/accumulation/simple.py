@@ -81,6 +81,8 @@ class AccumulationSteadyPred(AbstractAccumulation):
         min_frames_pred=30,
         max_frames_pred=300,
         recovery=300,
+        correlation_threshold=0.0,
+        diff_correlation_threshold=0.0
     ):
         AbstractAccumulation.__init__(
             self,
@@ -94,6 +96,11 @@ class AccumulationSteadyPred(AbstractAccumulation):
         self._current_target = 0
         self._target_acc = 0
         self._preds = {c: 0 for c in range(len(self.codes))}
+        self.correlation_threshold = correlation_threshold
+        self.diff_correlation_threshold = diff_correlation_threshold
+        self.logger.debug(f"Correlation threshold: {self.correlation_threshold}")
+        self.logger.debug(f"Diff correlation threshold: {self.diff_correlation_threshold}")
+        self.logger.debug(f"Minimum consecutive frames for prediction: {self._min_frames_pred}")
 
     def decision(self, timestamp):
         # Compute the Pearson correlation coefficient
@@ -101,8 +108,9 @@ class AccumulationSteadyPred(AbstractAccumulation):
 
         # Make a decision
         indices = np.flip(np.argsort(correlations))
+        diff_correlation = correlations[indices[0]] -  correlations[indices[1]]
         target = int(indices[0])
-        if target == self._current_target:
+        if target == self._current_target and correlations[indices[0]] > self.correlation_threshold and diff_correlation > self.diff_correlation_threshold :
             self._target_acc += 1
         else:
             self._current_target = target

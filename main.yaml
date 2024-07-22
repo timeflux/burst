@@ -1,57 +1,27 @@
 import:
+  # Device graph : sensor
   - graphs/{{DEVICE}}.yaml
+  # Preprocessing graph
+  - graphs/preprocessing.yaml
+  # Classification graph
+  #- graphs/classification_md.yaml
   - graphs/classification.yaml
+  # ERP computation graph
+  - graphs/erp.yaml
+  # Record graph
   {% if RECORD_DATA == 'true' %}
   - graphs/record.yaml
   {% endif %}
 graphs:
 
+  # Broker node
   - id: Broker
     nodes:
     - id: proxy
       module: timeflux.nodes.zmq
       class: Broker
 
-  - id: Preprocessing
-    nodes:
-    - id: sub
-      module: timeflux.nodes.zmq
-      class: Sub
-      params:
-        topics: [raw]
-    - id: rereference
-      module: nodes.rereference
-      class: Mean
-    - id: notch
-      module: timeflux_dsp.nodes.filters
-      class: IIRFilter
-      params:
-        filter_type: bandstop
-        frequencies: [48, 52]
-        order: 3
-    - id: bandpass
-      module: timeflux_dsp.nodes.filters
-      class: IIRFilter
-      params:
-        filter_type: bandpass
-        frequencies: [1, 25]
-        order: 2
-    - id: pub
-      module: timeflux.nodes.zmq
-      class: Pub
-      params:
-        topic: filtered
-    edges:
-      - source: sub:raw
-        target: rereference
-      - source: rereference
-        target: notch
-      - source: notch
-        target: bandpass
-      - source: bandpass
-        target: pub
-    rate: 10
-
+  # UI graph
   - id: UI
     nodes:
     - id: uiexpe
@@ -60,6 +30,7 @@ graphs:
       params:
         routes:
           app: ./www/expe
+          erp: ./www/erp
         settings:
           app:
             layout:
@@ -93,6 +64,7 @@ graphs:
                 sequences: {{ PINPAD_SEQUENCES }}
                 cue_target: {{ PINPAD_CUE_TARGET }}
                 cue_feedback: {{ PINPAD_CUE_FEEDBACK }}
+                time_duration: {{TIME_DURATION}}
             run:
               duration_rest: {{ TASK_DURATION_REST }}
               duration_lock_on: {{ TASK_DURATION_LOCK_ON }}
@@ -108,11 +80,12 @@ graphs:
               target_success: "#{{ UI_TARGET_SUCCESS_COLOR }}"
               target_failure: "#{{ UI_TARGET_FAILURE_COLOR }}"
               target_lock: "#{{ UI_TARGET_LOCK_COLOR }}"
+
     - id: sub
       module: timeflux.nodes.zmq
       class: Sub
       params:
-        topics: [ filtered, predictions , events, raw]
+        topics: [ filtered, predictions , events, erp, erp_non_target, erp_sliding]
     - id: pubexpe
       module: timeflux.nodes.zmq
       class: Pub
@@ -121,36 +94,14 @@ graphs:
     edges:
     - source: uiexpe:events
       target: pubexpe
+    - source: sub:erp
+      target: uiexpe:erp
     - source: sub:filtered
       target: uiexpe:eeg
+    - source: sub:erp_non_target
+      target: uiexpe:erp_non_target
+    - source: sub:erp_sliding
+      target: uiexpe:erp_sliding
     - source: sub:predictions
       target: uiexpe:predictions
     rate: 20
-
-  # - id: Debug
-  #   nodes:
-  #   - id: sub
-  #     module: timeflux.nodes.zmq
-  #     class: Sub
-  #     params:
-  #       topics: [ events, predictions ]
-  #   - id: display_events
-  #     module: timeflux.nodes.debug
-  #     class: Display
-  #     params:
-  #       meta: true
-  #   - id: display_predictions
-  #     module: timeflux.nodes.debug
-  #     class: Display
-  #     params:
-  #       meta: true
-  #   edges:
-  #     - source: sub:events
-  #       target: display_events
-  #     - source: sub:predictions
-  #       target: display_predictions
-  #   rate: 10
-
-
-
-

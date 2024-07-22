@@ -1055,6 +1055,9 @@ load_settings().then(async settings => {
         }
     });
 
+    // Let's analyze the settings 
+    
+    console.log(settings)
     // Initialize stages
     const stages = [];
 
@@ -1072,8 +1075,8 @@ load_settings().then(async settings => {
     // Display the initial message
     stages[1] = async () => {
         notify(
-            'Welcome',
-            'We will now start the calibration procedure.<br>Please stay still and try not to blink.<br>Look at the target that will be higlighted in blue.<br>For increased accuracy, we recommend that you silently count the short flashes that will appear inside the designated target.',
+            'Welcome to this Starburst BCI experiment!',
+            'We will now start the <b>calibration procedure</b>.<br>Focus your attention on the symbol in the center of the screen.<br>Flashing patterns will occur around the symbol.<br> Your task is to focus on the symbol and ignore the flashing patterns.<br> Please do not move your eyes during the procedure.',
             'Press any key to continue'
         )
         await interaction();
@@ -1092,7 +1095,7 @@ load_settings().then(async settings => {
         notify(
             'Training the model',
             '<img src="assets/img/spinner_white.apng" />',
-            'Please wait'
+            'Please wait...'
         )
         await flag('ready');
         toggle('overlay');
@@ -1102,8 +1105,8 @@ load_settings().then(async settings => {
     // Start free run
     stages[4] = async () => {
         notify(
-            'All set!',
-            'Now, let us flex these Jedi muscles.<br>Can you activate the targets?',
+            'Training session',
+            'You can freely try to activate the targets from the top left to the bottom right to get used to the system.<br>',
             'Press any key to continue'
         )
         await interaction();
@@ -1141,8 +1144,8 @@ load_settings().then(async settings => {
         || burst.options.layout.task == 'grid'
         )) {
             notify(
-                'Ready?',
-                'Now, try to copy the sequence!',
+                'Pinpad session',
+                'Now, the task starts.<br> You will see a pinpad sequence on the bottom left of the screen. <br> Your goal is to activate the targets to type the sequences that will be displayed.<br> If you typed right, the button will be colored in green. Otherwise it will be red.<br> The session is made of 10 sequences of 4 digits.',
                 'Press any key to continue'
             )
             await interaction();
@@ -1150,7 +1153,7 @@ load_settings().then(async settings => {
             await burst.task_sequence();
             let stats = burst.score.stats();
             notify(
-                'Congratulations!',
+                'Results',
                 `You achieved a score of ${Math.round(stats.hit_rate.average)}%.`,
                 'Press any key to continue'
             )
@@ -1166,8 +1169,8 @@ load_settings().then(async settings => {
         || burst.options.layout.task == 'grid'
         )) {
             notify(
-                'Ready?',
-                'Now, just do not look at the screen for 2 minutes.',
+                'Timed session',
+                `Now, just do not look at the screen for ${burst.options.task.sequence.time_duration} minutes.`,
                 'Press any key to continue'
             );
             await interaction();
