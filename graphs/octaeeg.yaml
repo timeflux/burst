@@ -1,0 +1,74 @@
+graphs:
+
+  - id: EEG
+    nodes:
+    - id: acquire
+      module: timeflux_octaeeg.nodes.driver
+      class: OctaEEG
+      params:
+        rate: 1000
+        gain: 1
+        names: [PO7, O1, Oz, O2, PO8, PO3, POz, PO4]
+    - id: publish
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: eeg
+    edges:
+    - source: acquire
+      target: publish
+    rate: 10
+
+  - id: Monitoring
+    nodes:
+    - id: subscribe
+      module: timeflux.nodes.zmq
+      class: Sub
+      params:
+        topics: [ eeg ]
+    - id: decimate
+      module: timeflux_dsp.nodes.filters
+      class: DropRows
+      params:
+        factor: 16 # Downsample to 250 Hz
+    - id: bandpass
+      module: timeflux_dsp.nodes.filters
+      class: IIRFilter
+      params:
+        order: 3
+        frequencies: [1, 40]
+    - id: ui
+      module: timeflux_ui.nodes.ui
+      class: UI
+    - id: debug
+      module: timeflux.nodes.debug
+      class: Display
+    edges:
+      - source: subscribe:eeg
+        target: ui:eeg
+      - source: subscribe:eeg
+        target: debug
+    rate: 10
+
+  - id: Recorder
+    nodes:
+    - id: subscribe
+      module: timeflux.nodes.zmq
+      class: Sub
+      params:
+        topics: [ eeg ]
+    - id: save
+      module: timeflux.nodes.hdf5
+      class: Save
+      params:
+        path: . # The HDF5 file will be saved in the current directory
+    edges:
+      - source: subscribe:eeg
+        target: save:eeg
+    rate: 1
+
+  - id: Broker
+    nodes:
+    - id: broker
+      module: timeflux.nodes.zmq
+      class: Broker
