@@ -64,6 +64,11 @@ graphs:
     class: Pub
     params:
       topic: predictions
+  - id: pub_correlations
+    module: timeflux.nodes.zmq
+    class: Pub
+    params:
+      topic: correlations
   edges:
     - source: sub:filtered
       target: epoch
@@ -81,6 +86,8 @@ graphs:
       target: predict:clf
     - source: predict
       target: pub
+    - source: predict:correlations
+      target: pub_correlations
     # - source: classification:events
     #   target: display
   rate: 10

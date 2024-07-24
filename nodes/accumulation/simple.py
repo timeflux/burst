@@ -1,6 +1,8 @@
 from nodes.accumulation.base import AbstractAccumulation
 from timeflux.helpers.port import make_event
 import numpy as np
+import pandas as pd
+from timeflux.helpers.clock import now, min_time, max_time
 
 
 class AccumulationPrevalentTarget(AbstractAccumulation):
@@ -105,6 +107,17 @@ class AccumulationSteadyPred(AbstractAccumulation):
     def decision(self, timestamp):
         # Compute the Pearson correlation coefficient
         correlations, pvalues = self.correlation(x=self._probas, indices=self._indices)
+
+        # Accumulate the correlations in self._accumulated_correlation dataframe with timestamp as index
+        # Replicate the timestamp so that it has the same length as the correlations
+        if self._accumulated_correlations is None:
+            self._accumulated_correlations = np.array([correlations])
+        else:
+            self._accumulated_correlations = np.vstack([self._accumulated_correlations, np.array([correlations])])
+        self._accumulated_correlations_id = np.append(self._accumulated_correlations_id,timestamp)
+        df = pd.DataFrame(self._accumulated_correlations)
+        df.index = now() + pd.to_timedelta(df.index, unit='s')
+        self.o_correlations.data = pd.DataFrame(df)
 
         # Make a decision
         indices = np.flip(np.argsort(correlations))

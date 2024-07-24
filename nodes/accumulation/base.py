@@ -156,3 +156,5 @@ class AbstractAccumulation(Node):
         self._indices = []
         self._recovery = False
         self._frames = 0
+        self._accumulated_correlations = None
+        self._accumulated_correlations_id = np.array([])
