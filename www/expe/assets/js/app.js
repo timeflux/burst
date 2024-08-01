@@ -1163,46 +1163,55 @@ load_settings().then(async settings => {
     };
 
     // Sequence task with a timer
-    stages[7] = async () => {
-        if (burst.options.task.sequence.enable && (burst.options.layout.task == 'keyboard' 
-        || burst.options.layout.task == 'simple'
-        || burst.options.layout.task == 'grid'
-        )) {
-            notify(
-                'Timed session',
-                `Now, just do not look at the screen for ${burst.options.task.sequence.time_duration} minutes.`,
-                'Press any key to continue'
-            );
-            await interaction();
-            toggle('overlay');
-            console.log(burst.score)
-            // Reinitialize the score
-            burst.score = new Score();
-            await burst.task_sequence_timed()
-            
-            // Compute the total length : length of all elements of burst.score.score
-            let total_length = 0;
-            for (let i = 0; i < burst.score.score.length; i++) {
-                total_length += burst.score.score[i].frames.length;
+
+    // Check environment variable to enable the task 
+    if (burst.options.task.sequence.time_duration !== 0) {
+        stages[7] = async () => {
+            if (burst.options.task.sequence.enable && 
+                (burst.options.layout.task === 'keyboard' ||
+                 burst.options.layout.task === 'simple' ||
+                 burst.options.layout.task === 'grid')) {
+                     
+                notify(
+                    'Timed session',
+                    `Now, just do not look at the screen for ${burst.options.task.sequence.time_duration} minutes.`,
+                    'Press any key to continue'
+                );
+                await interaction();
+                toggle('overlay');
+                console.log(burst.score);
+                // Reinitialize the score
+                burst.score = new Score();
+                await burst.task_sequence_timed();
+                
+                // Compute the total length: sum of the lengths of all elements in burst.score.score
+                let total_length = burst.score.score.reduce((sum, scoreItem) => sum + scoreItem.frames.length, 0);
+    
+                notify(
+                    'Time Up!',
+                    `This is the number of predictions that were made in 2 minutes: ${total_length}`,
+                    'Press any key to continue'
+                );
+                await interaction();
+                toggle('overlay');
             }
-
+        };
+    
+        stages[8] = async () => {
             notify(
-                'Time Up!',
-                `This is the number of predictions that were made in 2 minutes : ${total_length}`,
-                'Press any key to continue'
+                'Thank you!',
+                'We really appreciate your participation.'
             );
-            await interaction();
-            toggle('overlay');
-        }
-    };
-
-    stages[8] = async () => {
-        notify(
-            'Thank you!',
-            'We really appreciate your participation.'
-        );
-    };
-
+        };
+    } else {
+        stages[7] = async () => {
+            notify(
+                'Thank you!',
+                'We really appreciate your participation.'
+            );
+        };
+    }
+    
     // Run each stage consecutively
     for (let i = 0; i < stages.length; i++) {
         let r = await stages[i]();
