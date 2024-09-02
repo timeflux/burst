@@ -148,7 +148,8 @@ class AbstractAccumulation(Node):
 
             correlations.append(correlation)
             pvalues.append(pvalue)
-        self.logger.debug("Correlations:"+str(correlations))
+        
+        #self.logger.debug("Correlations:"+str(correlations))
         return correlations, pvalues
 
     def reset(self):

@@ -5,6 +5,9 @@ from scipy.stats import pearsonr
 from timeflux.helpers.port import make_event
 from timeflux.core.node import Node
 from abc import ABC, abstractmethod
+import pandas as pd
+from timeflux.helpers.clock import now, min_time, max_time
+
 
 
 from sklearn.metrics import confusion_matrix
@@ -221,6 +224,12 @@ class AccumulationMDPred(AbstractAccumulation):
                 self._momentum[i] -= pow(
                     2, self._consec[target] / self._min_frames_pred
                 ) - pow(2, (self._consec[target] - 1) / self._min_frames_pred)
+
+        ### TO DO ###
+        # PLOT MOMENTUM
+        df = pd.DataFrame(self._momentum)
+        df.index = now() + pd.to_timedelta(df.index, unit='s')
+        self.o_correlations.data = pd.DataFrame(df)
 
         self._preds.update(
             {self._current_target: self._preds[self._current_target] + 1}

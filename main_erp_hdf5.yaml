@@ -31,7 +31,10 @@ graphs:
         routes:
           app: ./www/expe
           erp: ./www/erp
+          correlations: ./www/correlations
         settings:
+          correlations:
+            threshold: {{CORRELATION_THRESHOLD}}
           app:
             layout:
               calibration: {{CALIBRATION_LAYOUT}}
@@ -84,7 +87,7 @@ graphs:
       module: timeflux.nodes.zmq
       class: Sub
       params:
-        topics: [ filtered, predictions , events, erp, erp_non_target, erp_sliding]
+        topics: [ filtered, predictions , events, erp, erp_non_target, erp_sliding, correlations]
     - id: pubexpe
       module: timeflux.nodes.zmq
       class: Pub
@@ -103,4 +106,6 @@ graphs:
       target: uiexpe:eeg
     - source: sub:predictions
       target: uiexpe:predictions
+    - source: sub:correlations
+      target: uiexpe:correlations
     rate: 20
