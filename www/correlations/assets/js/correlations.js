@@ -28,16 +28,16 @@ class CorrClass {
 
     
 
-    plotData(data,container) {
+    plotData(data, container, topX = 1) {
         // Plot the data for each frame we accumulated.
         // Initialize the arrays to store the data for each target
         let traces = [];
-
+    
         // Get the number of target from the first entries in data
         let first_Entry = Object.values(data)[0];
         // Get the number of keys in the first entry
         let n_targets = Object.values(first_Entry).length;
-
+    
         // Iterate on the targets and then on the keys
         for (let i = 0; i < n_targets; i++) {
             // Initialize the array to store the data for each target
@@ -47,10 +47,9 @@ class CorrClass {
                 y.push(data[key][i]);
             }
             // x is a span from 1 to the number of elements in y
-            let x = Array.from({length: y.length}, (v, k) => k + 1);
+            let x = Array.from({ length: y.length }, (v, k) => k + 1);
             // Create the trace
             let trace = {
-                // x is the number of frames from 1 to number of elements in y
                 x: x,
                 y: y,
                 mode: 'lines',
@@ -58,10 +57,30 @@ class CorrClass {
             };
             traces.push(trace);
         }
-
-        let title;
-        title = 'Correlations';
-
+    
+        // Sort traces by the last value in the y array in descending order
+        traces.sort((a, b) => b.y[b.y.length - 1] - a.y[a.y.length - 1]);
+    
+        // Select only the top X traces
+        traces = traces.slice(0, topX);
+    
+        // Add the threshold line if needed
+        let threshold = this.options.threshold;
+        if (threshold !== undefined) {
+            let threshold_trace = {
+                x: [traces[0].x[0], traces[0].x[traces[0].x.length - 1]],
+                y: [threshold, threshold],
+                mode: 'lines',
+                name: 'Correlation threshold',
+                line: {
+                    dash: 'dash',
+                    color: 'red'
+                }
+            };
+            traces.push(threshold_trace);
+        }
+    
+        // Define the layout
         const layout = {
             xaxis: {
                 title: 'Frame indices'
@@ -71,24 +90,12 @@ class CorrClass {
             },
             title: 'Plot of the correlations for each candidate target'
         };
-
-        // Add a horizontal line at the threshold value
-        let threshold = this.options.threshold;
-        let threshold_trace = {
-            x: [traces[0].x[0], traces[traces.length - 1].x[traces[traces.length - 1].x.length - 1]],
-            y: [threshold, threshold],
-            mode: 'lines',
-            name: 'Correlation threshold',
-            line: {
-                dash: 'dash',
-                color: 'red'
-            }
-        };
-        traces.push(threshold_trace);
-
+    
+        // Plot the data using Plotly
         Plotly.newPlot(container, traces, layout);
         return traces;
     }
+    
 
 
 }
