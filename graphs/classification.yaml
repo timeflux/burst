@@ -13,6 +13,7 @@ graphs:
     params:
       trigger: epoch
       length: {{ EPOCH }}
+      offset: {{ LATENCY }}
   - id: classification
     module: timeflux.nodes.ml
     class: Pipeline
