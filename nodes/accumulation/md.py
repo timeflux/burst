@@ -172,6 +172,7 @@ class AccumulationMDPred(AbstractAccumulation):
         recovery=300,
         momentum_threshold=1,
         correlation_threshold=0.0,
+        momentum_floor=0.0,
     ):
         AbstractAccumulation.__init__(
             self,
@@ -191,6 +192,7 @@ class AccumulationMDPred(AbstractAccumulation):
         self._momentum_threshold = momentum_threshold
         self._correlation_threshold = correlation_threshold
         self._tooclose_threshold = 0.05
+        self._momentum_floor = momentum_floor
 
     def decision(self, timestamp):
         
@@ -244,7 +246,7 @@ class AccumulationMDPred(AbstractAccumulation):
                     2, self._consec[i] / self._min_frames_pred
                 ) - pow(2, (self._consec[i] - 1) / self._min_frames_pred)
             else:  # Decay
-                if self._momentum[i] >= -8 :
+                if self._momentum[i] >= self._momentum_floor :
                     self._momentum[i] -= pow(
                         2, self._consec[target] / self._min_frames_pred
                     ) - pow(2, (self._consec[target] - 1) / self._min_frames_pred)
@@ -307,7 +309,6 @@ class AccumulationMDPred(AbstractAccumulation):
         AbstractAccumulation.reset(self)
         self._current_target = -1
         self._target_acc = 0
-        ## self._momentum = np.zeros(len(self.codes))
-        self._momentum = -4*np.ones(len(self.codes))
+        self._momentum = self._momentum_floor*np.ones(len(self.codes))
 
         self._momentum_accumulated = None
