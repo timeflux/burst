@@ -188,8 +188,24 @@ class AccumulationMDPred(AbstractAccumulation):
         self._tooclose_threshold = 0.05
 
     def decision(self, timestamp):
+        
+        # Pietro stuff
         # Compute the Pearson correlation coefficient
-        correlations, pvalues = self.correlation(x=self._probas, indices=self._indices)
+        x = self._probas
+        x = [round(b) for b in x]
+
+        # Convert sequences of ones leaving only the first one
+        countOnes = 0
+        for i in range(len(x)):
+            if x[i]:
+                countOnes += 1
+                if countOnes >= self._numOneFrames:
+                    x[i - countOnes + 2:i + 1] = [0] * (countOnes - 1)
+            else:
+                countOnes = 0
+        # 
+        
+        correlations, pvalues = self.correlation(x=x, indices=self._indices)
 
         # Make a decision
         indices = np.flip(np.argsort(correlations))

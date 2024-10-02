@@ -8,11 +8,12 @@ graphs:
     params:
       topics: [ filtered, events ]
   - id: epoch
-    module: timeflux.nodes.epoch
+    module: nodes.epoch
     class: Samples
     params:
       trigger: epoch
       length: {{ EPOCH }}
+      offset: {{OFFSET}}
   - id: classification
     module: timeflux.nodes.ml
     class: Pipeline

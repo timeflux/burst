@@ -8,11 +8,12 @@ graphs:
     params:
       topics: [filtered, events]
   - id: epoch_erp
-    module: timeflux.nodes.epoch
+    module: nodes.epoch
     class: Samples
     params:
       trigger: epoch
       length: {{ ERP_LENGTH }}
+      offset: {{ OFFSET }}
   - id: accumulate_epochs
     module: nodes.accumulation.erp
     class: ERP
