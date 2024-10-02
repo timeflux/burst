@@ -140,8 +140,8 @@ class AbstractAccumulation(Node):
 
         for code in self.codes:
             y = [code[i] for i in indices]
-
             if np.all((np.array(x) == 0) | (np.array(x) == 1)):
+            #if np.all((np.array(x) == 0) | (np.array(x) == 1)) or np.all((np.array(y) == 0) | (np.array(y) == 1)):
                 # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
                 # and NaN will be returned. In this case, we force the correlation value to 0.
                 correlation = 0
@@ -151,7 +151,7 @@ class AbstractAccumulation(Node):
 
             correlations.append(correlation)
             pvalues.append(pvalue)
-
+        ##self.logger.debug("Correlations:"+str(correlations))
         return correlations, pvalues
 
     def reset(self):
@@ -170,7 +170,7 @@ class AccumulationMDPred(AbstractAccumulation):
         min_frames_pred=20,
         max_frames_pred=300,
         recovery=300,
-        momentum_threshold=0.9,
+        momentum_threshold=1,
     ):
         AbstractAccumulation.__init__(
             self,
@@ -192,7 +192,6 @@ class AccumulationMDPred(AbstractAccumulation):
 
     def decision(self, timestamp):
         
-<<<<<<< HEAD
         # Binary + Count ones method
         x = self._probas
         x = [round(b) for b in x]
@@ -209,26 +208,9 @@ class AccumulationMDPred(AbstractAccumulation):
 
         correlations, pvalues = self.correlation(x=x, indices=self._indices)
         
-=======
-        # Pietro stuff
->>>>>>> expe_11_classes
-        # Compute the Pearson correlation coefficient
-        x = self._probas
-        x = [round(b) for b in x]
-
-        # Convert sequences of ones leaving only the first one
-        countOnes = 0
-        for i in range(len(x)):
-            if x[i]:
-                countOnes += 1
-                if countOnes >= self._numOneFrames:
-                    x[i - countOnes + 2:i + 1] = [0] * (countOnes - 1)
-            else:
-                countOnes = 0
-        # 
         
-        correlations, pvalues = self.correlation(x=x, indices=self._indices)
-
+        # Compute the Pearson correlation coefficient
+        correlations, pvalues = self.correlation(x=self._probas, indices=self._indices)
         # Make a decision
         indices = np.flip(np.argsort(correlations))
         target = int(indices[0])
@@ -250,19 +232,29 @@ class AccumulationMDPred(AbstractAccumulation):
         self._current_target = target
         self._consec[target] += 1
 
+        # Actualize Momentum
         for i in range(len(self._momentum)):
-            if i == target:  # Momentum
+
+            # FRED HERE !
+            ### CORRELATION THRESHOLD FOR MOMENTUM
+            if i == target and correlations[indices[0]] > 0.20:  # Momentum
                 self._momentum[i] += pow(
                     2, self._consec[i] / self._min_frames_pred
                 ) - pow(2, (self._consec[i] - 1) / self._min_frames_pred)
             else:  # Decay
-                self._momentum[i] -= pow(
-                    2, self._consec[target] / self._min_frames_pred
-                ) - pow(2, (self._consec[target] - 1) / self._min_frames_pred)
-
-        ### TO DO ###
-        # PLOT MOMENTUM
-        df = pd.DataFrame(self._momentum)
+                if self._momentum[i] >= -8 :
+                    self._momentum[i] -= pow(
+                        2, self._consec[target] / self._min_frames_pred
+                    ) - pow(2, (self._consec[target] - 1) / self._min_frames_pred)
+                
+                
+        if self._momentum_accumulated is None:
+            self._momentum_accumulated = np.array([self._momentum])
+        else:
+            self._momentum_accumulated = np.vstack([self._momentum_accumulated, np.array([self._momentum])])       
+    
+        # Accumulate Momentum data
+        df = pd.DataFrame(np.array(self._momentum_accumulated))
         df.index = now() + pd.to_timedelta(df.index, unit='s')
         self.o_correlations.data = pd.DataFrame(df)
 
@@ -272,8 +264,8 @@ class AccumulationMDPred(AbstractAccumulation):
 
         if (
             self._momentum[target]
-            > self._momentum_threshold | self._consec[target]
-            > self._min_frames_pred
+            > self._momentum_threshold 
+           and self._consec[target]> self._min_frames_pred
         ):
             res_momentum = self._momentum / np.sum(self._momentum)
             res_momentum = (res_momentum[target] - res_momentum)[
@@ -313,4 +305,7 @@ class AccumulationMDPred(AbstractAccumulation):
         AbstractAccumulation.reset(self)
         self._current_target = -1
         self._target_acc = 0
-        self._momentum = np.zeros(len(self.codes))
+        ## self._momentum = np.zeros(len(self.codes))
+        self._momentum = -4*np.ones(len(self.codes))
+
+        self._momentum_accumulated = None
