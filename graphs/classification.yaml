@@ -13,7 +13,11 @@ graphs:
     params:
       trigger: epoch
       length: {{ EPOCH }}
+<<<<<<< HEAD
       offset: {{ OFFSET }}
+=======
+      offset: {{OFFSET}}
+>>>>>>> expe_11_classes
   - id: classification
     module: timeflux.nodes.ml
     class: Pipeline
