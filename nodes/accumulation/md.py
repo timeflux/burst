@@ -174,6 +174,7 @@ class AccumulationMDPred(AbstractAccumulation):
         correlation_threshold=0.0,
         momentum_floor=0.0,
     ):
+        self._momentum_floor = momentum_floor
         AbstractAccumulation.__init__(
             self,
             codes,
@@ -186,13 +187,12 @@ class AccumulationMDPred(AbstractAccumulation):
         self._current_target = 0
         self._target_acc = 0
         self._preds = {c: 0 for c in range(len(self.codes))}
-
         self._consec = np.zeros(len(self.codes))
         self._momentum = np.zeros(len(self.codes))
         self._momentum_threshold = momentum_threshold
         self._correlation_threshold = correlation_threshold
         self._tooclose_threshold = 0.05
-        self._momentum_floor = momentum_floor
+        
 
     def decision(self, timestamp):
         
