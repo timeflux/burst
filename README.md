@@ -181,6 +181,8 @@ Maximize your browser window to avoid distractions, and follow the instructions.
 - Self-paced selection (use left arrow to restart the calibration and right arrow to continue to the evaluation tasks)
 - Zero or more evaluation tasks
 
+The accumulation and scoring parameters can be controlled in real time from the settings popover by pressing the `s` key.
+
 When you are done, close the browser tab, and send the `Ctrl+C` command to Timeflux.
 
 ## Application schema
