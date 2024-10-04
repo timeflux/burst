@@ -860,10 +860,50 @@ class Score {
 
 }
 
+
+/**
+ * Initialize accumulation settings
+ */
+function handle_accumulation(burst) {
+
+    let open = false;
+
+    let form = Formio.createForm(document.getElementById("formio"), schema).then(function(form) {
+        form.on('update', function(submission) {
+            let method = submission.method.slice(10).toLowerCase();
+            if (method != 'random') // TODO: hidden field in schema
+                submission[method]['codes'] = burst.options.codes.task;
+            let params = {
+                method: submission.method,
+                args: {...submission.common, ...submission[method]}
+            }
+            burst.io.commit('rpc', { label: "accumulate", data: JSON.stringify(params) });
+            open = !open;
+            toggle('settings');
+            return burst.io.publish('rpc');
+        });
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key == 's') {
+            event.stopImmediatePropagation();
+            open = !open;
+            toggle('settings');
+        } else {
+            if (open) event.stopImmediatePropagation();
+        }
+    })
+
+}
+
+
 load_settings().then(async settings => {
 
     // Initialize
     let burst = new Burst(settings.app);
+
+    // Handle accumulation settings
+    handle_accumulation(burst);
 
     // Handle events
     burst.io.subscribe('predictions');

@@ -1,26 +1,63 @@
 import numpy as np
 import random
 import json
-from scipy.stats import pearsonr
+import sys
+from scipy.stats import pearsonr, ConstantInputWarning
 from timeflux.helpers.port import make_event
 from timeflux.core.node import Node
 
 # Capture Pearson correlation warnings and throw exceptions
 import warnings
-warnings.filterwarnings("error", module="scipy.stats")
+warnings.filterwarnings("error", category=ConstantInputWarning)
+
 
 class Accumulate(Node):
     """ Accumulation of probabilities
 
-    This node accumulates the probabilities of single-trial classifications from a ML node.
-    When enough confidence is reached for a specific class, a final prediction is made.
+    This node allows to select an accumulation and scoring method and to change it dynamically.
+    This node is listening to the RPC input for the "accumulate" call.
 
     Args:
-        codes (list): The list of burst codes, one for each target.
+        method (str): The method name. A corresponding class must exist.
+        **kwargs: Arbitrary parameters for this method.
+
+    Attributes:
+        i (Port): Default input, expects DataFrame.
+        i_rpc (Port): RPC input, expects DataFrame.
+        o (Port): Default output, provides DataFrame
+    """
+
+    def __init__(self, method, **kwargs):
+
+        # Initialize the accumulator with default parameters
+        self.accumulator = getattr(sys.modules[__name__], method)(**kwargs)
+
+    def update(self):
+
+        # Update
+        if self.i_rpc.ready():
+            # Get the last RPC message and reinstantiate
+            payload = json.loads(self.i_rpc.data.loc[self.i_rpc.data.label == "accumulate", :]["data"].values[-1])
+            self.logger.debug(payload)
+            self.accumulator = getattr(sys.modules[__name__], payload["method"])(**payload["args"])
+
+        # Run
+        self.accumulator.i = self.i
+        self.accumulator.o.clear()
+        self.accumulator.update()
+        self.o = self.accumulator.o
+
+
+class AccumulateAbstract(Node):
+    """ Accumulation of probabilities
+
+    This node accumulates the probabilities of single-trial classifications from a ML node.
+    The `decide()` method is called on each frame until final prediction is made.
+    This node is an abstract class, and should not be used as is.
+
+    Args:
         min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 30).
         max_buffer_size (int): Maximum number of predictions to accumulate for each class (default: 200).
-        threshold (float): Minimum value to reach according to the Pearson correlation coefficient (default: .75).
-        delta (float): Minimum difference percentage to reach between the p-values of the two best candidates (default: .5).
         recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
 
     Attributes:
@@ -28,13 +65,10 @@ class Accumulate(Node):
         o (Port): Default output, provides DataFrame
     """
 
-    def __init__(self, codes, min_buffer_size=30, max_buffer_size=200, threshold=.75, delta=.5, recovery=300):
-        self.codes = [[int(bit) for bit in code] for code in codes]
+    def __init__(self, min_buffer_size=30, max_buffer_size=200, recovery=300):
         self.min_buffer_size = min_buffer_size
         self.max_buffer_size = max_buffer_size
         self.recovery = recovery
-        self.threshold = threshold
-        self.delta = delta
         self.reset()
 
     def update(self):
@@ -92,42 +126,110 @@ class Accumulate(Node):
                 if len(self._probas) < self.min_buffer_size:
                     continue
 
-                # Compute the Pearson correlation coefficient
-                correlations = []
-                pvalues = []
-                x = self._probas
-                for code in self.codes:
-                    y = [code[i] for i in self._indices]
-                    try:
-                        correlation, pvalue = pearsonr(x, y)
-                    except:
-                        # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
-                        # and NaN will be returned. In this case, we force the correlation value to 0.
-                        correlation = 0
-                    correlations.append(correlation)
-                    pvalues.append(pvalue)
-
-                # Make a decision
-                indices = np.flip(np.argsort(correlations))
-                target = int(indices[0])
-                correlation = correlations[indices[0]]
-                delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
-                self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}\tFrame: {self._frames}")
-                if correlation < self.threshold:
-                    continue
-                if delta < self.delta:
-                    continue
+                # Compute the score and make a decision
+                decision = self.decide()
+                if decision == False: continue
 
                 # Send prediction
-                meta = {"timestamp": timestamp, "target": target, "score": correlation, "frames": self._frames}
+                meta = {"timestamp": timestamp, "target": decision["target"], "score": decision["score"], "frames": self._frames}
                 self.o.data = make_event("predict", meta, True)
                 self.logger.debug(meta)
                 self.reset()
                 self._recovery = timestamp
-
 
     def reset(self):
         self._probas = []
         self._indices = []
         self._recovery = False
         self._frames = 0
+
+    def decide(self):
+        return False
+
+
+class AccumulatePearson(AccumulateAbstract):
+    """ Accumulation of probabilities
+
+    This node accumulates the probabilities of single-trial classifications from a ML node.
+    When enough confidence is reached for a specific class, a final prediction is made.
+
+    Args:
+        codes (list): The list of burst codes, one for each target.
+        min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 30).
+        max_buffer_size (int): Maximum number of predictions to accumulate for each class (default: 200).
+        threshold (float): Minimum value to reach according to the Pearson correlation coefficient (default: .75).
+        delta (float): Minimum difference percentage to reach between the p-values of the two best candidates (default: .5).
+        recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
+
+    Attributes:
+        i (Port): Default input, expects DataFrame.
+        o (Port): Default output, provides DataFrame
+    """
+
+    def __init__(self, codes, min_buffer_size=30, max_buffer_size=200, threshold=.75, delta=.5, recovery=300):
+        self.codes = [[int(bit) for bit in code] for code in codes]
+        self.min_buffer_size = min_buffer_size
+        self.max_buffer_size = max_buffer_size
+        self.recovery = recovery
+        self.threshold = threshold
+        self.delta = delta
+        self.reset()
+
+    def decide(self):
+
+        # Compute the Pearson correlation coefficient
+        correlations = []
+        pvalues = []
+        x = self._probas
+        for code in self.codes:
+            y = [code[i] for i in self._indices]
+            try:
+                correlation, pvalue = pearsonr(x, y)
+            except:
+                # If one input is constant, the standard deviation will be 0, the correlation will not be computed,
+                # and NaN will be returned. In this case, we force the correlation value to 0.
+                correlation = 0
+                pvalue = 1e-8
+            correlations.append(correlation)
+            pvalues.append(pvalue)
+
+        # Make a decision
+        indices = np.flip(np.argsort(correlations))
+        target = int(indices[0])
+        correlation = correlations[indices[0]]
+        delta = (pvalues[indices[1]] - pvalues[indices[0]]) / pvalues[indices[0]]
+        #self.logger.debug(f"Candidate: {target}\tCorrelation: {correlation:.4f}\tDelta: {delta:.4f}\tFrame: {self._frames}")
+        if correlation < self.threshold:
+            return False
+        if delta < self.delta:
+            return False
+
+        # Return target and score
+        return {"target": target, "score": correlation}
+
+
+class AccumulateRandom(AccumulateAbstract):
+    """ Random decision
+
+    This node accumulates the probabilities of single-trial classifications from a ML node.
+    When the buffer size reaches `min_buffer_size`, a random target between 0 and `n_targets` is predicted.
+    This node has no practical use except for demonstrating how to extend the base `AccumulateAbstract` class.
+
+    Args:
+        n_targets (int): The number of targets.
+        min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 30).
+        max_buffer_size (int): Maximum number of predictions to accumulate for each class (default: 200).
+        recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
+
+    Attributes:
+        i (Port): Default input, expects DataFrame.
+        o (Port): Default output, provides DataFrame
+    """
+
+    def __init__(self, n_targets, min_buffer_size=30, max_buffer_size=200, recovery=300):
+        self.n_targets = n_targets
+        super().__init__(min_buffer_size, max_buffer_size, recovery)
+
+    def decide(self):
+        return {"target": random.randint(0, self.n_targets - 1), "score": 42}
+

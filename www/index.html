@@ -5,7 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script defer src="/common/assets/js/timeflux.js"></script>
+    <script defer src="https://cdn.form.io/js/formio.embed.js"></script> <!--formio-->
+    <script defer src="assets/js/schema.js"></script>
     <script defer src="assets/js/app.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"><!--formio-->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/single.css">
     <link rel="stylesheet" href="assets/css/simple.css">
@@ -20,6 +23,11 @@
     <!-- Preload -->
     <div class="preload">
       <div class="target on"></div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="hidden">
+      <div id="formio"></div>
     </div>
 
     <!-- Overlay -->

@@ -6,7 +6,7 @@ graphs:
     module: timeflux.nodes.zmq
     class: Sub
     params:
-      topics: [ filtered, events ]
+      topics: [ filtered, events, rpc ]
   - id: epoch
     module: timeflux.nodes.epoch
     class: Samples
@@ -59,6 +59,7 @@ graphs:
     module: nodes.predict
     class: Accumulate
     params:
+      method: AccumulatePearson
       codes:
       {% for CODE in TASK_CODES.split() %}
         - "{{CODE}}"
@@ -67,6 +68,10 @@ graphs:
       delta: .5
       min_buffer_size: 20
       max_buffer_size: 80
+    # params:
+    #   method: AccumulateRandom
+    #   n_targets: 5
+    #   min_buffer_size: 50
   - id: pub
     module: timeflux.nodes.zmq
     class: Pub
@@ -90,9 +95,9 @@ graphs:
       target: classification
     - source: classification:events
       target: predict
+    - source: sub:rpc
+      target: predict:rpc
     - source: predict
       target: pub
-    # - source: classification:events
-    #   target: display
   rate: 10
 

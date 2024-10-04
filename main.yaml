@@ -33,7 +33,7 @@ graphs:
       class: IIRFilter
       params:
         filter_type: bandpass
-        frequencies: [2, 25]
+        frequencies: [1, 25]
         order: 2
     - id: pub
       module: timeflux.nodes.zmq
@@ -94,14 +94,21 @@ graphs:
       class: Sub
       params:
         topics: [ filtered, predictions ]
-    - id: pub
+    - id: pub_events
       module: timeflux.nodes.zmq
       class: Pub
       params:
         topic: events
+    - id: pub_rpc
+      module: timeflux.nodes.zmq
+      class: Pub
+      params:
+        topic: rpc
     edges:
     - source: ui:events
-      target: pub
+      target: pub_events
+    - source: ui:rpc
+      target: pub_rpc
     - source: sub:filtered
       target: ui:eeg
     - source: sub:predictions
