@@ -1,6 +1,6 @@
 # Burst VEP
 
-This Timeflux application is a proof-of-concept of the Burst VEP method. For the theoretical background and details regarding the implementation, please refer to [our paper](http://dx.doi.org/10.1088/1741-2552/ad8ef7).
+This Timeflux application is a proof-of-concept of the Burst VEP method. For the theoretical background and details regarding this implementation, please refer to [our paper](http://dx.doi.org/10.1088/1741-2552/ad8ef7).
 
 ## Installation
 
@@ -18,6 +18,8 @@ Then simply clone this repository:
 ```bash
 git clone https://github.com/timeflux/burst.git
 ```
+
+For a general overview of Timeflux, please check the [official documentation](https://doc.timeflux.io/) and the [introduction paper](https://doi.org/10.3217/978-3-85125-682-6-17).
 
 ## Stages, layouts, and tasks
 
