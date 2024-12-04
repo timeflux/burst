@@ -46,7 +46,7 @@ The application can be fine-tuned in a number of ways.
 
 The [`.env`](https://github.com/timeflux/burst/blob/main/.env) file provides high-level configuration.
 
-By default, a random signal is used in place of EEG data, so you can try the application without any additional hardware. For real EEG acquisition, you must provide your own `DEVICE.yaml` graph in the [`graphs`](https://github.com/timeflux/burst/tree/main/graphs) folder.
+By default, a random signal is used in place of EEG data, so you can try the application without any additional hardware. For real EEG acquisition, you must provide your own `DEVICE.yaml` graph in the [`graphs`](https://github.com/timeflux/burst/tree/main/graphs) folder. An example `lsl.yaml` graph, using the [Lab Streaming Layer](https://labstreaminglayer.org/) protocol, is provided.
 
 Currently, only the `riemann` machine learning pipeline is available.
 
