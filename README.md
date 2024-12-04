@@ -54,7 +54,7 @@ Currently, only the `riemann` machine learning pipeline is available.
 |---------|--------------|---------|
 | DEVICE | EEG device | dummy |
 | EPOCH | Epoch length, in seconds, used for classification | 0.25 |
-| LATENCY | Signal latency, in seconds | -0.08 |
+| LATENCY | Signal latency, in seconds | 0.08 |
 | PIPELINE | Classification pipeline (riemann, eegnet) | riemann |
 | CALIBRATION_LAYOUT | The layout used for calibration (single, simple, grid, keyboard) | single |
 | TASK_LAYOUT | The layout used for the main task (simple, grid, keyboard) | simple |
