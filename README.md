@@ -212,7 +212,7 @@ scores = events.loc[events['label'] == "task_ends"]["data"]
 
 ```
 @article{Dehais2024,
-  title = {Leveraging textured flickers: a leap toward practical,  visually comfortable,  and high-performance dry EEG code-VEP BCI},
+  title = {Leveraging textured flickers: a leap toward practical, visually comfortable, and high-performance dry EEG code-VEP BCI},
   volume = {21},
   ISSN = {1741-2552},
   url = {http://dx.doi.org/10.1088/1741-2552/ad8ef7},
@@ -220,7 +220,7 @@ scores = events.loc[events['label'] == "task_ends"]["data"]
   number = {6},
   journal = {Journal of Neural Engineering},
   publisher = {IOP Publishing},
-  author = {Dehais,  Frédéric and Cabrera Castillos,  Kalou and Ladouce,  Simon and Clisson,  Pierre},
+  author = {Dehais, Frédéric and Cabrera Castillos, Kalou and Ladouce, Simon and Clisson, Pierre},
   year = {2024},
   month = dec,
   pages = {066023}
