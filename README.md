@@ -73,7 +73,7 @@ Burst codes are defined in a [hook](https://github.com/timeflux/burst/blob/main/
 
 The default preprocessing consists of the following:
 
-- Average rereferencement
+- Average rereferencing
 - Notch filter at 50 Hz (IIR, order 3)
 - Bandpass filter between 1 and 25 Hz (IIR, order 2)
 
