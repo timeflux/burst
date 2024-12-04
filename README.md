@@ -58,6 +58,7 @@ Currently, only the `riemann` machine learning pipeline is available.
 | PIPELINE | Classification pipeline (riemann, eegnet) | riemann |
 | CALIBRATION_LAYOUT | The layout used for calibration (single, simple, grid, keyboard) | single |
 | TASK_LAYOUT | The layout used for the main task (simple, grid, keyboard) | simple |
+| DYNAMIC_CODES | Generate dynamic codes (1) or use static codes (0) | 0 |
 | SEED | If set, the code generator will use this random seed for reproducibility purposes | |
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
