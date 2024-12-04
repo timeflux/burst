@@ -1,6 +1,6 @@
 # Burst VEP
 
-This Timeflux application is a proof-of-concept of the Burst VEP method.
+This Timeflux application is a proof-of-concept of the Burst VEP method. For the theoretical background and details regarding the implementation, please refer to [our paper](http://dx.doi.org/10.1088/1741-2552/ad8ef7).
 
 ## Installation
 
