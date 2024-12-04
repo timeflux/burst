@@ -44,20 +44,6 @@ def gen_codes(n, length=132, bursts=6, jitter=3):
 	random.shuffle(codes)
 	return codes
 
-def get_codes(layout):
-	if layout == "single":
-		#return code[0]
-		return gen_code(offset=10)
-	if layout == "simple":
-		#return " ".join(codes[0:5])
-		return " ".join(gen_codes(5))
-	if layout == "grid":
-		#return " ".join(codes[0:9])
-		return " ".join(gen_codes(9))
-	if layout == "keyboard":
-		#return " ".join(codes)
-		return " ".join(gen_codes(11))
-
 def get_codes(layout, static=False):
 	if layout == "single":
 		return codes[0] if static else gen_code(offset=10)
