@@ -54,7 +54,6 @@ def get_codes(layout, static=False):
 	if layout == "keyboard":
 		return " ".join(codes) if static else " ".join(gen_codes(11))
 
-
 # For reproducibility
 seed = int(os.getenv("SEED", time.time_ns()))
 logger.info(f"Random seed: {seed}")

@@ -60,6 +60,8 @@ Currently, only the `riemann` machine learning pipeline is available.
 | TASK_LAYOUT | The layout used for the main task (simple, grid, keyboard) | simple |
 | DYNAMIC_CODES | Generate dynamic codes (1) or use static codes (0) | 0 |
 | SEED | If set, the code generator will use this random seed for reproducibility purposes | |
+| CHANNELS | The list of EEG channels | PO7,O1,Oz,O2,PO8,PO3,POz,PO4 |
+| REFERENCE | If set, the electrode used for rereferencing, otherwise an average rereferencing will be applied | |
 
 Note that you can also set up environment variables [outside of an .env file](https://doc.timeflux.io/en/stable/usage/getting_started.html#environment).
 
@@ -73,11 +75,11 @@ The default preprocessing consists of the following:
 
 - Average rereferencement
 - Notch filter at 50 Hz (IIR, order 3)
-- Bandpass filter between 1 and 40 Hz (IIR, order 2)
+- Bandpass filter between 1 and 25 Hz (IIR, order 2)
 
-It can be modified in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph.
+This can be modified in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph.
 
-Individual epochs are scaled using the standard deviation of the training set. Class imbalance is handled through random undersampling.
+Individual epochs are scaled using the standard deviation of the training set. If this is an issue, class imbalance can be handled through random undersampling (disabled by default, see [`classification.yaml`](https://github.com/timeflux/burst/blob/main/graphs/classification.yaml)).
 
 ### User interface
 

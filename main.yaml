@@ -18,9 +18,17 @@ graphs:
       class: Sub
       params:
         topics: [raw]
+    {% if REFERENCE %}
+    - id: rereference
+      module: nodes.rereference
+      class: Channel
+      params:
+        channel: {{ REFERENCE }}
+    {% else %}
     - id: rereference
       module: nodes.rereference
       class: Mean
+    {% endif %}
     - id: notch
       module: timeflux_dsp.nodes.filters
       class: IIRFilter
@@ -74,11 +82,11 @@ graphs:
                 - "{{CODE}}"
               {% endfor %}
             stim:
-              type: gabor
+              type: ricker
               depth: .8
             calibration:
               blocks: 5
-              repetitions: 1
+              repetitions: 3
               active_only: true
             task:
               cue:
