@@ -52,20 +52,30 @@ graphs:
   - id: predict
     module: nodes.predict
     class: Accumulate
-    params:
-      method: AccumulatePearson
-      codes:
-      {% for CODE in TASK_CODES.split() %}
-        - "{{CODE}}"
-      {% endfor %}
-      threshold: .2
-      delta: .5
-      min_buffer_size: 20
-      max_buffer_size: 80
     # params:
     #   method: AccumulateRandom
     #   n_targets: 5
     #   min_buffer_size: 50
+    # params:
+    #   method: AccumulatePearson
+    #   codes:
+    #   {% for CODE in TASK_CODES.split() %}
+    #     - "{{CODE}}"
+    #   {% endfor %}
+    #   threshold: .2
+    #   delta: .5
+    #   min_buffer_size: 20
+    #   max_buffer_size: 80
+    params:
+      method: AccumulateSteady
+      codes:
+      {% for CODE in TASK_CODES.split() %}
+        - "{{CODE}}"
+      {% endfor %}
+      min_buffer_size: 50
+      max_buffer_size: 80
+      min_frames_pred: 50
+      max_frames_pred: 200
   - id: pub
     module: timeflux.nodes.zmq
     class: Pub

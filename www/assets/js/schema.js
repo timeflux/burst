@@ -33,12 +33,16 @@ const schema = {
             "labelPosition": "left-left",
             "widget": "html5",
             "placeholder": " ",
-            "defaultValue": "AccumulatePearson",
+            "defaultValue": "AccumulateSteady",
             "data": {
                 "values": [
                     {
                         "label": "Pearson",
                         "value": "AccumulatePearson"
+                    },
+                    {
+                        "label": "Steady",
+                        "value": "AccumulateSteady"
                     },
                     {
                         "label": "Random",
@@ -87,6 +91,44 @@ const schema = {
                     },
                     "clearOnHide": false,
                     "key": "pearson.delta",
+                    "type": "number",
+                },
+            ]
+        },
+        {
+            "label": "Steady",
+            "conditional": {
+                "show": true,
+                "when": "method",
+                "eq": "AccumulateSteady"
+            },
+            "type": "well",
+            "input": false,
+            "components": [
+                {
+                    "label": "Minimum prediction score",
+                    "labelPosition": "left-left",
+                    "defaultValue": 50,
+                    "validate": {
+                        "required": true,
+                        "min": 1,
+                        "max": 1e9
+                    },
+                    "clearOnHide": false,
+                    "key": "steady.min_frames_pred",
+                    "type": "number"
+                },
+                {
+                    "label": "Maximum predictions",
+                    "labelPosition": "left-left",
+                    "defaultValue": 200,
+                    "validate": {
+                        "required": true,
+                        "min": 1,
+                        "max": 1e9
+                    },
+                    "clearOnHide": false,
+                    "key": "steady.max_frames_pred",
                     "type": "number",
                 },
             ]

@@ -155,18 +155,38 @@ To create a new stimulus type, simply add a new image in [this folder](https://g
 
 The application classifies single flashes. Epochs are triggered at each frame on 250ms windows. The classification pipeline computes xdawn covariances projected on the tangent space followed by a linear discriminant analysis. The resulting probabilities are [accumulated](https://github.com/timeflux/burst/blob/main/nodes/predict.py) in a circular buffer on which correlation analysis is performed. When enough confidence is reached for a specific target, a final prediction is made.
 
-The accumulation engine is [configurable](https://github.com/timeflux/burst/blob/main/graphs/classification.yaml).
+Several accumulation engines are available, which can be configured either from the [classification graph](https://github.com/timeflux/burst/blob/main/graphs/classification.yaml) or adjusted in realtime using the contextual menu (by pressing the `s` key).
+
+The current default decision engine is _Steady_.
+
+#### Parameters available for all decision engines
 
 | Setting | Description  | Default |
 |---------|--------------|---------|
 | codes | The list of burst codes, one for each target | |
 | min_buffer_size | Minimum number of predictions to accumulate before emitting a prediction | 30 |
 | max_buffer_size | Maximum number of predictions to accumulate for each class | 200 |
-| threshold | Minimum value to reach according to the Pearson correlation coefficient | .75 |
-| delta | Minimum difference percentage to reach between the p-values of the two best candidates | .5 |
 | recovery | Minimum duration in ms required between two consecutive epochs after a prediction | 300 |
 
+#### _Pearson_ decision engine
+
+This method computes the Pearson correlation for each frame and code. The final prediction is made when the `threshold` and `delta` limits are reached.
+
+| Setting | Description  | Default |
+|---------|--------------|---------|
+| threshold | Minimum value to reach according to the Pearson correlation coefficient | .75 |
+| delta | Minimum difference percentage to reach between the p-values of the two best candidates | .5 |
+
 Please note that default values are reasonnably suitable for random data. For real EEG data, the threshold should probably be raised.
+
+#### _Steady_ decision engine
+
+Based on the _Pearson_ engine, this method uses a different decision process
+
+| Setting | Description  | Default |
+|---------|--------------|---------|
+| min_frames_pred | Minimum number of times the current candidate must have been detected to emit a prediction | 50 |
+| max_frames_pred | Maximum number of frames after which the best performing candidate is chosen | 200 |
 
 ## Running
 
