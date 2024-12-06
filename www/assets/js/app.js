@@ -176,7 +176,7 @@ class Burst {
      * @param {number} [options.run.duration_lock_on] - the duration of the feedback when a prediction is received
      * @param {number} [options.run.duration_lock_off] - the rest period after the feedback
      * @param {Object} [options.stim]
-     * @param {string} [options.stim.type] - the stimulus type ('gabord', 'ricker', 'face', 'plain')
+     * @param {string} [options.stim.type] - the stimulus type ('gabor', 'ricker', 'plain')
      * @param {number} [options.stim.depth] - the stimulus opacity (0-1)
      * @param {Object} [options.colors]
      * @param {string} [options.colors.background] - the background color (hexadecimal)
@@ -862,25 +862,37 @@ class Score {
 
 
 /**
- * Initialize accumulation settings
+ * Initialize stim and accumulation settings
  */
-function handle_accumulation(burst) {
+function handle_settings(burst) {
 
     let open = false;
 
     let form = Formio.createForm(document.getElementById("formio"), schema).then(function(form) {
         form.on('update', function(submission) {
-            let method = submission.method.slice(10).toLowerCase();
-            if (method != 'random') // TODO: hidden field in schema
-                submission[method]['codes'] = burst.options.codes.task;
+
+            // Update stim
+            let stim = submission['stim'];
+            set_css_var('--target-url', 'url(../img/' + stim.type + '.png)');
+            console.log(burst.options);
+            set_css_var('--target-depth', hex_to_rgba(burst.options.colors.target_off, 1 - stim.depth));
+
+            // Update decision engine
+            let decision = submission['decision'];
+            let method = decision.method.slice(10).toLowerCase();
+            if (decision.method != 'AccumulateRandom') // TODO: hidden field in schema
+                decision[method]['codes'] = burst.options.codes.task;
             let params = {
-                method: submission.method,
-                args: {...submission.common, ...submission[method]}
+                method: decision.method,
+                args: {...decision.common, ...decision[method]}
             }
             burst.io.commit('rpc', { label: "accumulate", data: JSON.stringify(params) });
+
+            // Close popover and publish
             open = !open;
             toggle('settings');
             return burst.io.publish('rpc');
+
         });
     });
 
@@ -902,8 +914,8 @@ load_settings().then(async settings => {
     // Initialize
     let burst = new Burst(settings.app);
 
-    // Handle accumulation settings
-    handle_accumulation(burst);
+    // Handle accumulation and stim settings
+    handle_settings(burst);
 
     // Handle events
     burst.io.subscribe('predictions');

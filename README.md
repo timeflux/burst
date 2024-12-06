@@ -106,7 +106,7 @@ The application expects an dictionary of settings.
 | run.duration_rest | The rest period before the free run begins, in ms | 2000 |
 | run.duration_lock_on | The duration of the feedback when a prediction is received | 1500 |
 | run.duration_lock_off | The rest period after the feedback | 500 |
-| stim.type | The stimulus type ('gabor', 'ricker', 'face', 'plain') | gabor |
+| stim.type | The stimulus type ('gabor', 'ricker', 'plain') | gabor |
 | stim.depth | The stimulus opacity (between 0 and 1) | 0.8 |
 | colors.background | The background color | #202020 |
 | colors.text | The text color | #FFFFFF |
@@ -119,7 +119,9 @@ The application expects an dictionary of settings.
 | colors.target_failure | The target color when the task failed | red |
 | colors.target_lock | The prediction color | blue |
 
-The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. Also see [`app.js`](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
+The default settings can be changed in the [`main.yaml`](https://github.com/timeflux/burst/blob/main/main.yaml) graph. See [`app.js`](https://github.com/timeflux/burst/blob/main/www/assets/js/app.js) for details.
+
+You can also update the stim parameters in realtime from the control panel (by pressing the `s` key).
 
 #### HTML
 
@@ -155,7 +157,7 @@ To create a new stimulus type, simply add a new image in [this folder](https://g
 
 The application classifies single flashes. Epochs are triggered at each frame on 250ms windows. The classification pipeline computes xdawn covariances projected on the tangent space followed by a linear discriminant analysis. The resulting probabilities are [accumulated](https://github.com/timeflux/burst/blob/main/nodes/predict.py) in a circular buffer on which correlation analysis is performed. When enough confidence is reached for a specific target, a final prediction is made.
 
-Several accumulation engines are available, which can be configured either from the [classification graph](https://github.com/timeflux/burst/blob/main/graphs/classification.yaml) or adjusted in realtime using the contextual menu (by pressing the `s` key).
+Several accumulation engines are available, which can be configured either from the [classification graph](https://github.com/timeflux/burst/blob/main/graphs/classification.yaml) or adjusted in realtime from the control panel (by pressing the `s` key).
 
 The current default decision engine is _Steady_.
 
