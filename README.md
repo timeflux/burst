@@ -106,7 +106,7 @@ The application expects an dictionary of settings.
 | run.duration_rest | The rest period before the free run begins, in ms | 2000 |
 | run.duration_lock_on | The duration of the feedback when a prediction is received | 1500 |
 | run.duration_lock_off | The rest period after the feedback | 500 |
-| stim.type | The stimulus type ('gabord', 'ricker', 'face', 'plain') | gabor |
+| stim.type | The stimulus type ('gabor', 'ricker', 'face', 'plain') | gabor |
 | stim.depth | The stimulus opacity (between 0 and 1) | 0.8 |
 | colors.background | The background color | #202020 |
 | colors.text | The text color | #FFFFFF |
