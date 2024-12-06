@@ -181,7 +181,7 @@ Please note that default values are reasonnably suitable for random data. For re
 
 #### _Steady_ decision engine
 
-Based on the _Pearson_ engine, this method uses a different decision process
+Based on the _Pearson_ engine, this method uses a different decision process.
 
 | Setting | Description  | Default |
 |---------|--------------|---------|
