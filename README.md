@@ -3,7 +3,7 @@
 This Timeflux application is a proof-of-concept of the Burst VEP method. For the theoretical background and details regarding this implementation, please refer to [our paper](http://dx.doi.org/10.1088/1741-2552/ad8ef7).
 
 > [!NOTE]
-> The latest version includes significant enhancements and updates compared to the implementation described in the paper. If you are interested in accessing the original version, please refer to the [v0.4 branch](https://github.com/timeflux/burst/tree/v0.4).
+> The latest version includes significant enhancements and updates compared to the implementation described in the paper. If you are interested in accessing the original version, please refer to the [v0.4 tag](https://github.com/timeflux/burst/tree/v0.4).
 
 ## Installation
 
