@@ -87,20 +87,20 @@ const schema = {
                     "labelPosition": "left-left",
                     "widget": "html5",
                     "placeholder": " ",
-                    "defaultValue": "AccumulateSteady",
+                    "defaultValue": "nodes.predict.Steady",
                     "data": {
                         "values": [
                             {
                                 "label": "Pearson",
-                                "value": "AccumulatePearson"
+                                "value": "nodes.predict.Pearson"
                             },
                             {
                                 "label": "Steady",
-                                "value": "AccumulateSteady"
+                                "value": "nodes.predict.Steady"
                             },
                             {
                                 "label": "Random",
-                                "value": "AccumulateRandom"
+                                "value": "Random"
                             }
                         ]
                     },
@@ -116,7 +116,7 @@ const schema = {
                     "conditional": {
                         "show": true,
                         "when": "decision.method",
-                        "eq": "AccumulatePearson"
+                        "eq": "nodes.predict.Pearson"
                     },
                     "type": "well",
                     "input": false,
@@ -154,7 +154,7 @@ const schema = {
                     "conditional": {
                         "show": true,
                         "when": "decision.method",
-                        "eq": "AccumulateSteady"
+                        "eq": "nodes.predict.Steady"
                     },
                     "type": "well",
                     "input": false,
@@ -192,7 +192,7 @@ const schema = {
                     "conditional": {
                         "show": true,
                         "when": "decision.method",
-                        "eq": "AccumulateRandom"
+                        "eq": "Random"
                     },
                     "type": "well",
                     "components": [

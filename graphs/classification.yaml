@@ -50,14 +50,14 @@ graphs:
             solver: lsqr
             shrinkage: auto
   - id: predict
-    module: nodes.predict
+    module: nodes.accumulate
     class: Accumulate
     # params:
-    #   method: AccumulateRandom
+    #   method: Random
     #   n_targets: 5
     #   min_buffer_size: 50
     # params:
-    #   method: AccumulatePearson
+    #   method: nodes.predict.Pearson
     #   codes:
     #   {% for CODE in TASK_CODES.split() %}
     #     - "{{CODE}}"
@@ -67,7 +67,7 @@ graphs:
     #   min_buffer_size: 20
     #   max_buffer_size: 80
     params:
-      method: AccumulateSteady
+      method: nodes.predict.Steady
       codes:
       {% for CODE in TASK_CODES.split() %}
         - "{{CODE}}"

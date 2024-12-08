@@ -874,13 +874,12 @@ function handle_settings(burst) {
             // Update stim
             let stim = submission['stim'];
             set_css_var('--target-url', 'url(../img/' + stim.type + '.png)');
-            console.log(burst.options);
             set_css_var('--target-depth', hex_to_rgba(burst.options.colors.target_off, 1 - stim.depth));
 
             // Update decision engine
             let decision = submission['decision'];
-            let method = decision.method.slice(10).toLowerCase();
-            if (decision.method != 'AccumulateRandom') // TODO: hidden field in schema
+            let method = decision.method.split('.').slice(-1)[0].toLowerCase();
+            if (method != 'random') // TODO: hidden field in schema
                 decision[method]['codes'] = burst.options.codes.task;
             let params = {
                 method: decision.method,
