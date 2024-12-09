@@ -209,7 +209,7 @@ the momentum is decreased by the same quantity for all the other targets.
 
 | Setting | Description  | Default |
 |---------|--------------|---------|
-| min_frames_pred | Minimum number of consecutive times the current candidate must have been detected | 50 |
+| min_frames_pred | Minimum number of consecutive times the current candidate must have been detected | 20 |
 | momentum_threshold | Minimum momentum value to reach to trigger a prediction | 1 |
 | correlation_threshold | Minimum correlation required to update the momementum | 0 |
 | momentum_floor | Initial momentum value | 0 |
