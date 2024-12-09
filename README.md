@@ -162,7 +162,7 @@ The application classifies single flashes. Epochs are triggered at each frame on
 
 Several accumulation engines are available, which can be configured either from the [classification graph](https://github.com/timeflux/burst/blob/main/graphs/classification.yaml) or adjusted in realtime from the control panel (by pressing the `s` key).
 
-The current default decision engine is _Steady_.
+The current default decision engine is _Momentum_.
 
 #### Parameters available for all decision engines
 
@@ -172,6 +172,7 @@ The current default decision engine is _Steady_.
 | min_buffer_size | Minimum number of predictions to accumulate before emitting a prediction | 30 |
 | max_buffer_size | Maximum number of predictions to accumulate for each class | 200 |
 | recovery | Minimum duration in ms required between two consecutive epochs after a prediction | 300 |
+| feedback | Provide continuous score feedback | True |
 
 #### _Pearson_ decision engine
 
@@ -190,8 +191,28 @@ Based on the _Pearson_ engine, this method uses a different decision process.
 
 | Setting | Description  | Default |
 |---------|--------------|---------|
-| min_frames_pred | Minimum number of times the current candidate must have been detected to emit a prediction | 50 |
+| min_frames_pred | Minimum number of consecutive times the current candidate must have been detected | 50 |
 | max_frames_pred | Maximum number of frames after which the best performing candidate is chosen | 200 |
+
+#### _Momentum_ decision enginine
+
+In _Steady_, forcing to wait for a finite consecutive amount of predictions `X` might
+nullify the informative value of receiving even `X-1` consecutive predictions. With this strategy we resort to
+this issue by defining a "momentum" function that exponentially increases with consecutive predictions.
+Receiving a prediction of a different target will not reset the momentum, but only the consecutive predictions
+counter to stop the exponential increase, still preserving the value carried by past coherent predictions.
+The momentum function is `M(x) = (2^(x/m))-1` defined in `[0, 1]` where `x` is the count of consecutive predictions
+and m is the number of consecutive prediction to reach M(m) = 1 (ex: `min_frames_pred`).
+At each increase `c -> c+1` of the consecutive predictions counter of a target, the momentum of a target is
+increased by `M(c) - M(c-1)`, until it exceeds a threshold to output the accumulated decision. At the same time,
+the momentum is decreased by the same quantity for all the other targets.
+
+| Setting | Description  | Default |
+|---------|--------------|---------|
+| min_frames_pred | Minimum number of consecutive times the current candidate must have been detected | 50 |
+| momentum_threshold | Minimum momentum value to reach to trigger a prediction | 1 |
+| correlation_threshold | Minimum correlation required to update the momementum | 0 |
+| momentum_floor | Initial momentum value | 0 |
 
 ## Running
 

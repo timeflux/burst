@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import random
 import json
 import sys
@@ -64,16 +65,18 @@ class AccumulateAbstract(Node):
         min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 30).
         max_buffer_size (int): Maximum number of predictions to accumulate for each class (default: 200).
         recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
+        feedback (bool): Provide continuous score feedback (default: True).
 
     Attributes:
         i (Port): Default input, expects DataFrame.
         o (Port): Default output, provides DataFrame
     """
 
-    def __init__(self, min_buffer_size=30, max_buffer_size=200, recovery=300):
+    def __init__(self, min_buffer_size=30, max_buffer_size=200, recovery=300, feedback=True):
         self.min_buffer_size = min_buffer_size
         self.max_buffer_size = max_buffer_size
         self.recovery = recovery
+        self.feedback = feedback
         self.reset()
 
     def update(self):
@@ -133,14 +136,22 @@ class AccumulateAbstract(Node):
 
                 # Compute the score and make a decision
                 decision = self.decide()
-                if decision == False: continue
+
+                # Provide feedback
+                if self.feedback:
+                    scores = self.scores()
+                    if type(scores) == list:
+                        meta = {"timestamp": timestamp, "scores": self._scores}
+                        self.o.data = pd.concat([self.o.data, make_event("scores", meta, True)])
+                        # self.logger.debug(self._scores)
 
                 # Send prediction
-                meta = {"timestamp": timestamp, "target": decision["target"], "score": decision["score"], "frames": self._frames}
-                self.o.data = make_event("predict", meta, True)
-                self.logger.debug(meta)
-                self.reset()
-                self._recovery = timestamp
+                if decision:
+                    meta = {"timestamp": timestamp, "target": decision["target"], "score": decision["score"], "frames": self._frames}
+                    self.logger.debug(meta)
+                    self.o.data = pd.concat([self.o.data, make_event("predict", meta, True)])
+                    self.reset()
+                    self._recovery = timestamp
 
     def reset(self):
         self._probas = []
@@ -149,6 +160,9 @@ class AccumulateAbstract(Node):
         self._frames = 0
 
     def decide(self):
+        return False
+
+    def scores(self):
         return False
 
 
@@ -164,13 +178,14 @@ class Random(AccumulateAbstract):
         min_buffer_size (int): Minimum number of predictions to accumulate before emitting a prediction (default: 30).
         max_buffer_size (int): Maximum number of predictions to accumulate for each class (default: 200).
         recovery (int): Minimum duration in ms required between two consecutive epochs after a prediction (default: 300).
+        feedback (bool): Provide continuous score feedback (default: True).
 
     Attributes:
         i (Port): Default input, expects DataFrame.
         o (Port): Default output, provides DataFrame
     """
 
-    def __init__(self, n_targets, min_buffer_size=30, max_buffer_size=200, recovery=300):
+    def __init__(self, n_targets, min_buffer_size=30, max_buffer_size=200, recovery=300, feedback=True):
         self.n_targets = n_targets
         super().__init__(min_buffer_size, max_buffer_size, recovery)
 

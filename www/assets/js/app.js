@@ -925,6 +925,8 @@ load_settings().then(async settings => {
                     trigger('ready');
                 case 'predict':
                     trigger('predict', JSON.parse(row.data));
+                // case 'scores':
+                //     console.log(JSON.parse(row.data));
             }
         }
     });

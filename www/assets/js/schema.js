@@ -87,7 +87,7 @@ const schema = {
                     "labelPosition": "left-left",
                     "widget": "html5",
                     "placeholder": " ",
-                    "defaultValue": "nodes.predict.Steady",
+                    "defaultValue": "nodes.predict.Momentum",
                     "data": {
                         "values": [
                             {
@@ -97,6 +97,10 @@ const schema = {
                             {
                                 "label": "Steady",
                                 "value": "nodes.predict.Steady"
+                            },
+                            {
+                                "label": "Momentum",
+                                "value": "nodes.predict.Momentum"
                             },
                             {
                                 "label": "Random",
@@ -185,6 +189,70 @@ const schema = {
                             "key": "decision.steady.max_frames_pred",
                             "type": "number",
                         },
+                    ]
+                },
+                {
+                    "label": "Momentum",
+                    "conditional": {
+                        "show": true,
+                        "when": "decision.method",
+                        "eq": "nodes.predict.Momentum"
+                    },
+                    "type": "well",
+                    "input": false,
+                    "components": [
+                        {
+                            "label": "Minimum prediction score",
+                            "labelPosition": "left-left",
+                            "defaultValue": 20,
+                            "validate": {
+                                "required": true,
+                                "min": 1,
+                                "max": 1e9
+                            },
+                            "clearOnHide": false,
+                            "key": "decision.momentum.min_frames_pred",
+                            "type": "number"
+                        },
+                        {
+                            "label": "Momentum threshold",
+                            "labelPosition": "left-left",
+                            "defaultValue": 1,
+                            "validate": {
+                                "required": true,
+                                "min": 0,
+                                "max": 1
+                            },
+                            "clearOnHide": false,
+                            "key": "decision.momentum.momentum_threshold",
+                            "type": "number",
+                        },
+                        {
+                            "label": "Correlation threshold",
+                            "labelPosition": "left-left",
+                            "defaultValue": 0,
+                            "validate": {
+                                "required": true,
+                                "min": 0,
+                                "max": 1
+                            },
+                            "clearOnHide": false,
+                            "key": "decision.momentum.correlation_threshold",
+                            "type": "number",
+                        },
+                        {
+                            "label": "Momentum floor",
+                            "labelPosition": "left-left",
+                            "defaultValue": 0,
+                            "validate": {
+                                "required": true,
+                                "min": 0,
+                                "max": 1
+                            },
+                            "clearOnHide": false,
+                            "key": "decision.momentum.momentum_floor",
+                            "type": "number",
+                        }
                     ]
                 },
                 {
